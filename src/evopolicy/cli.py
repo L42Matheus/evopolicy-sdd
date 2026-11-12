@@ -101,10 +101,10 @@ def build_parser() -> argparse.ArgumentParser:
     a.add_argument("--semantic-guard", action="store_true",
                    help="Também bloqueia se o L4 apontar divergência")
     a.add_argument("--llm-only", action="store_true",
-                   help="Baseline P: o LLM decide sozinho a partir dos documentos")
+                   help="Baseline B1: o LLM decide sozinho a partir dos documentos")
     _llm_args(a)
 
-    lb = commands.add_parser("llm-benchmark", help="Compara P (LLM decide) e P+S (SDD + LLM)")
+    lb = commands.add_parser("llm-benchmark", help="Compara B1 (LLM decide) e P (SDD decide, LLM explica)")
     lb.add_argument("--output", default=None, help="Padrão: <root>/results")
     _llm_args(lb)
     return parser

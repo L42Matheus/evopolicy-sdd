@@ -1,4 +1,4 @@
-"""Benchmark com LLM real: condição P (LLM decide) x P+S (SDD decide, LLM explica).
+"""Benchmark com LLM real: B1 (LLM decide) x P (SDD decide, LLM explica).
 
 Cada condição roda com documentos sincronizados (v2) e com documentos antigos
 (v1) diante da política vigente (spec v2). O rótulo esperado é sempre
@@ -29,12 +29,12 @@ def run_llm_benchmark(spec: dict[str, Any], knowledge_by_version: dict[str, dict
         for case in cases:
             expected = case["expected_v2"]
             p = baseline.decide(case)
-            rows.append({"scenario": scenario, "condition": "P_llm_decide", "case": case["id"],
+            rows.append({"scenario": scenario, "condition": "B1_llm_decide", "case": case["id"],
                          "expected": expected, "status": p["status"],
                          "correct": p["status"] == expected, "blocked": False,
                          "llm_text_used": p["status"] != "ERRO", "note": p.get("error", "")})
             a = assistant.answer(case)
-            rows.append({"scenario": scenario, "condition": "PS_sdd_llm_explica",
+            rows.append({"scenario": scenario, "condition": "P_sdd_llm_explica",
                          "case": case["id"], "expected": expected, "status": a.status,
                          "correct": a.status == expected, "blocked": a.status == BLOCKED,
                          "llm_text_used": a.source == "llm",
@@ -42,7 +42,7 @@ def run_llm_benchmark(spec: dict[str, Any], knowledge_by_version: dict[str, dict
 
     summary = []
     for scenario, _ in SCENARIOS:
-        for condition in ("P_llm_decide", "PS_sdd_llm_explica"):
+        for condition in ("B1_llm_decide", "P_sdd_llm_explica"):
             sel = [r for r in rows if r["scenario"] == scenario and r["condition"] == condition]
             emitted = [r for r in sel if not r["blocked"]]
             summary.append({

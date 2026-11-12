@@ -1,0 +1,646 @@
+{
+  "0222f4a39a85f81079f62b1cec3ff041a4a38c20e05da4678b690b5204eced77": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "049f7e048a09b73333c4200bfe9742bab2bcad33eb0858ba96ef00dd8e0df33e": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou o pedido 30 minutos após o despacho. Pelo DOC-CANCEL, cancelamento do cliente após o despacho é negado. Não há fraude suspeita, então a regra de segurança do DOC-SEG não se aplica. Também não houve falha do restaurante ou da transportadora (falha_origem: nenhuma), portanto o DOC-FALHA não gera elegibilidade. A condição de cliente premium não altera o resultado, pois nenhum documento prevê exceção para esse perfil."
+    }
+  },
+  "0cb3ec1e04ca338981bacebc64638827ba0bf71f8b050a2fc1d39bf6cab3b1aa": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O pedido já havia sido despachado e o cliente cancelou 1,2 hora (1h12) depois do despacho. Pelo DOC-CANCEL, o cancelamento após o despacho normalmente é negado. A exceção para cliente premium vale só até 1 hora depois do despacho (inclusive), prazo que foi ultrapassado. Não há fraude suspeita, então o DOC-SEG não se aplica. Também não há falha do restaurante ou da transportadora (falha_origem: nenhuma), então o DOC-FALHA não gera elegibilidade. O reembolso é negado."
+    }
+  },
+  "0e2965af2d481ba4672cbe6ad55491a3f372795f11703b242cccac7ed5ed6235": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-SEG",
+      "justificativa": "Há suspeita de fraude no caso. Pelo DOC-SEG, fraude suspeita exige revisão humana, e essa regra de segurança prevalece sobre as regras de reembolso. Por isso, as demais políticas não são aplicadas para decidir automaticamente: o cancelamento após o despacho por cliente não premium (DOC-CANCEL) e a ausência de falha operacional (DOC-FALHA). O pedido deve ser encaminhado para revisão humana."
+    }
+  },
+  "11c73dd2c0986f86c3cbc7f28d844e04733597229b0714eca70c6e7f5783d311": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou o pedido depois do despacho (despachado = true). Pelo DOC-CANCEL, cancelamento do cliente após o despacho é negado. Não há suspeita de fraude, então o DOC-SEG não se aplica. Também não houve falha do restaurante ou da transportadora (falha_origem = nenhuma), então o DOC-FALHA não gera elegibilidade. O fato de o cliente ser premium e de o cancelamento ter ocorrido 0 horas após o despacho não altera a regra, pois nenhum documento prevê exceção para esses casos."
+    }
+  },
+  "19f216203b774127e1a6007bd28956aea16a31434ccfda4881fcdb5c498c0919": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-FALHA",
+      "justificativa": "O extravio da encomenda foi causado pela transportadora. Pelo DOC-FALHA, falha causada pelo restaurante ou pela transportadora gera elegibilidade de reembolso, exceto quando há fraude suspeita. Neste caso não há fraude suspeita, então a regra de segurança do DOC-SEG não se aplica. Também não houve cancelamento pelo cliente, de modo que as restrições de cancelamento após despacho do DOC-CANCEL não incidem. O reembolso é permitido."
+    }
+  },
+  "2039b2d64c1be2a20b921b7314ffacfd5944f3aa890b72ecba16da182b1a9a96": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "2901a8e9209d0bf8f654e68450e2641020a4d31a588d9d8dcc6629470dd6ac39": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou o pedido cerca de 1,2 hora (1h12) após o despacho. Pelo DOC-CANCEL, cancelamento feito pelo cliente após o despacho é negado. Não há fraude suspeita, então a regra de revisão humana do DOC-SEG não se aplica. Também não houve falha do restaurante ou da transportadora (falha_origem: nenhuma), então o DOC-FALHA não gera elegibilidade. O status de cliente premium não aparece em nenhuma política como exceção."
+    }
+  },
+  "2aec61e4ef1478980d5a9959f861697fda501c8fa1bfe2f965e70797bc3a0d07": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-FALHA",
+      "justificativa": "A pergunta é uma dúvida geral sobre o prazo de estorno, e nenhum dos documentos fornecidos trata de prazos de estorno. Os fatos do caso também não indicam motivo de elegibilidade: não há cancelamento pelo cliente (DOC-CANCEL), não há falha do restaurante ou da transportadora (DOC-FALHA) e não há suspeita de fraude (DOC-SEG). Como as políticas não permitem uma resposta segura sobre o tempo de estorno, o caso deve ser encaminhado para revisão humana."
+    }
+  },
+  "2c03a25633445dd9687b12cc01dba11a98e2e9b8e23cb12fcf9cbabb42d291c9": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "NENHUM",
+      "justificativa": "A pergunta é uma dúvida geral sobre o prazo de estorno, e nenhum dos documentos trata desse assunto. O DOC-SEG cobre antifraude, o DOC-FALHA cobre falhas do restaurante ou da transportadora e o DOC-CANCEL cobre cancelamentos. Os fatos também não apontam uma base de reembolso: não houve cancelamento pelo cliente, não há falha de origem e não há suspeita de fraude. Como as políticas não permitem uma resposta segura sobre prazos de estorno, o caso deve ir para revisão humana."
+    }
+  },
+  "2cab666140dfceb8fad6da4b8343dfcbf360b9078e0975baeba305a09407cfc6": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-FALHA",
+      "justificativa": "A falha teve origem no restaurante, que não preparou o pedido corretamente. Pelo DOC-FALHA, falha causada pelo restaurante dá direito a reembolso, salvo fraude suspeita, e não há fraude suspeita neste caso (fraude_suspeita = false). Por isso a regra de segurança do DOC-SEG não se aplica. O DOC-CANCEL também não é relevante, pois o cliente não cancelou o pedido. Reembolso permitido."
+    }
+  },
+  "31c360ce2e08f775ba7004c739ccd96534cb6d11e24ced969fbcc3898d8efcf6": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-SEG",
+      "justificativa": "Há suspeita de fraude. O DOC-SEG exige revisão humana nesses casos e estabelece que a regra de segurança tem precedência sobre reembolsos. A falha da transportadora tornaria o pedido elegível pelo DOC-FALHA, mas o próprio documento exclui os casos de fraude suspeita. O DOC-CANCEL não se aplica, pois não houve cancelamento pelo cliente."
+    }
+  },
+  "39e8193c2711bd8b39d5c3500ac1f909ba30c4be6af86e4e501115cb4203e107": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-SEG",
+      "justificativa": "Há falha da transportadora, o que em princípio tornaria o pedido elegível a reembolso (DOC-FALHA). Porém o próprio DOC-FALHA exclui os casos de fraude suspeita. O DOC-SEG determina que fraude suspeita exige revisão humana e que a regra de segurança prevalece sobre as regras de reembolso. Como há suspeita de fraude, o caso deve ser encaminhado para revisão humana."
+    }
+  },
+  "3aa8c5ea3e0a4f25848ea7959549e825f37f60e995cdce4865dca28f8b774fdd": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento foi negado porque o pedido já havia sido despachado, e, segundo o documento, cancelamentos após o despacho normalmente são negados. A exceção prevista para clientes premium vale apenas para cancelamentos feitos até 1 hora depois do despacho (inclusive). Como o horário do cancelamento em relação ao despacho não foi informado, não foi possível confirmar que essa exceção se aplica a este caso."
+    }
+  },
+  "3bada6ab4ef4d95c0446dfe2328ed2ff2c6d72e906ee283d0ff92a52ee34d000": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "3e0746862cdba0e3ae15bc605cbf4e39a5c0e5a96c5c0c21a2e7f2ae7bab8ac1": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-SEG",
+      "justificativa": "Há suspeita de fraude no caso. Pelo DOC-SEG, fraude suspeita exige revisão humana, e a regra de segurança tem precedência sobre as regras de reembolso. Por isso, a permissão de cancelamento antes do despacho prevista no DOC-CANCEL não pode ser aplicada automaticamente. O DOC-FALHA não se aplica, pois não houve falha do restaurante ou da transportadora e ele também exclui casos com fraude suspeita. Ser cliente premium não altera a decisão, já que nenhum documento trata desse status."
+    }
+  },
+  "40ee38cde3feb7f0a9aa6f766cc71652349e883f9995c04af5b92f02a2d4da32": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente pediu o cancelamento depois que o pedido já tinha sido despachado (despachado = true, 0,3 h após o despacho). Pelo DOC-CANCEL, cancelamento do cliente após o despacho é negado. Não há suspeita de fraude, então a regra de precedência do DOC-SEG não se aplica. Também não houve falha do restaurante ou da transportadora (falha_origem = nenhuma), então o DOC-FALHA não gera elegibilidade. O status não premium não altera a regra, e nenhum documento prevê tolerância de tempo após o despacho."
+    }
+  },
+  "45e263e2ff57bc80ac8a4766ef2daa61ec92310b728da756a2e85a3439e6abd6": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-FALHA",
+      "justificativa": "Conforme DOC-FALHA, uma falha causada pelo restaurante dá direito a reembolso, salvo suspeita de fraude. Neste caso a falha teve origem no restaurante, que não preparou o pedido corretamente, e não há suspeita de fraude. Por isso a regra de segurança do DOC-SEG não se aplica. As restrições do DOC-CANCEL sobre pedidos já despachados também não se aplicam, porque não houve cancelamento pelo cliente. O reembolso é permitido."
+    }
+  },
+  "55cd09b6176d668e4e7560fb03f7c772dbb9eb2d4f559906e97f0ed7e195ba86": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-SEG",
+      "justificativa": "Há suspeita de fraude no caso. Segundo o DOC-SEG, fraude suspeita exige revisão humana, e a regra de segurança prevalece sobre as regras de reembolso. O cancelamento antes do despacho seria, em princípio, permitido pelo DOC-CANCEL, mas o próprio documento ressalva os casos de fraude. Por isso, o caso deve ser encaminhado para revisão humana."
+    }
+  },
+  "5ba49e748f212d680088df396a3301022ea97cc71706d822a7fe230b142d5228": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento foi negado porque o pedido já havia sido despachado, e, conforme a política, cancelamentos após o despacho normalmente não são aceitos. A única exceção prevista vale para clientes premium que cancelam até 1 hora após o despacho, o que não se aplica aqui, pois se trata de um cliente comum. Assim, não há exceção que permita o reembolso neste caso."
+    }
+  },
+  "5bd624f0a6e5d6735d4975ea41fa00a7f6297c891b26f64415c1c8db5add9e7a": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento deve ser negado, pois o pedido já foi despachado e, conforme a política, cancelamentos após o despacho normalmente são negados. A única exceção prevista vale para clientes premium que cancelam até 1 hora depois do despacho. Como este cliente não é premium, a exceção não se aplica, mesmo com o pedido cancelado 0,3 hora após o despacho."
+    }
+  },
+  "6b3c6c7000c50dcdbe23e89bcab5c0a95732c88f15912da8fe798852a13d3cab": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "Não há fraude suspeita, então a regra do DOC-SEG não se aplica. Porém as duas políticas restantes apontam para decisões opostas. Pelo DOC-CANCEL, o cancelamento pedido pelo cliente após o despacho deve ser negado, e o pedido já havia sido despachado. Pelo DOC-FALHA, a falha causada pelo restaurante torna o pedido elegível a reembolso. Os documentos não definem qual regra prevalece nesse caso, nem se o cancelamento foi motivado pela falha do restaurante. Como não é possível concluir com segurança, o caso deve ir para revisão humana."
+    }
+  },
+  "6cc80a24c9cdd882e4b873c282c38b90e64c59f82f65645cdd381f8fd82550dc": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "6e4fb6b149fa71858f1f3ebdb6bf819692d23393eefe7434a38f38c115192b08": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou após o despacho (0,3 hora depois). Pela política DOC-CANCEL, o cancelamento após o despacho normalmente é negado. A exceção vale apenas para clientes premium que cancelam até 1 hora após o despacho, e o cliente não é premium. Não há fraude suspeita, então a revisão humana prevista no DOC-SEG não se aplica. Também não há falha do restaurante ou da transportadora que gere elegibilidade pelo DOC-FALHA. Por isso, o reembolso é negado."
+    }
+  },
+  "702c25553b97f69c11bb2b18094b0e27db7f55618ff7ba2387d80103bb634d82": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documentos_citados": [
+        "DOC-SEG"
+      ],
+      "resposta": "O pedido de reembolso deve ser encaminhado para revisão humana, pois há indício de fraude neste caso. Conforme o documento Antifraude e validação, fraude suspeita exige revisão humana, e a regra de segurança tem precedência sobre reembolsos. Por isso, o reembolso não deve ser processado diretamente pelo atendimento até a conclusão da revisão."
+    }
+  },
+  "7499c95842d591caded6eee1a103112266dbb946cb6dd631661778308434ece3": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": false,
+      "divergencias": [
+        {
+          "aspecto": "excecao",
+          "explicacao": "O documento afirma, sem ressalvas, que todo cancelamento do cliente após o despacho é negado. A regra (prioridade 25) e o REQ-05 criam uma exceção: cliente premium que cancela até 1 hora após o despacho (inclusive) recebe PERMITIR. Para esse caso, o documento indica NEGAR e a regra executa PERMITIR. O texto não menciona essa exceção, introduzida na versão 2.",
+          "regra_id": "REG-PREMIUM-EXC"
+        },
+        {
+          "aspecto": "precedencia",
+          "explicacao": "No documento, a negação após o despacho é absoluta. A regra e o REQ-03 negam apenas quando não há exceção aplicável. A REG-PREMIUM-EXC (25) e a REG-FALHA (20), de prioridade mais alta, podem resultar em PERMITIR para pedidos despachados. A REG-SEG (10) pode resultar em REVISAO_HUMANA. O texto omite essa precedência, e a omissão muda a decisão nesses casos.",
+          "regra_id": "REG-CANCEL-ENVIADO"
+        },
+        {
+          "aspecto": "precedencia",
+          "explicacao": "O documento diz que o cancelamento antes do despacho é sempre permitido. O REQ-04 condiciona a permissão à ausência de fraude ou falha prioritária. Na execução, a REG-SEG (prioridade 10) decide antes e envia o caso para REVISAO_HUMANA. Com isso, um cancelamento pré-despacho com indício de fraude não é permitido, ao contrário do que o texto afirma.",
+          "regra_id": "REG-CANCEL-PRE"
+        }
+      ]
+    }
+  },
+  "7653c8fea5b1c28d390197f7238e5fdd4c7ff870da34a224560336fc105e349b": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "Não há suspeita de fraude (DOC-SEG não se aplica) nem falha do restaurante ou da transportadora (DOC-FALHA não se aplica). O pedido foi despachado, então vale o DOC-CANCEL: após o despacho, o cancelamento normalmente é negado. A exceção é o cliente premium que cancela até 1 hora depois do despacho (inclusive). O cliente é premium, mas o tempo entre o despacho e o cancelamento não foi informado (horas_apos_despacho nulo). Sem esse dado, não é possível saber se a exceção se aplica, por isso o caso deve ir para revisão humana."
+    }
+  },
+  "7675f7103a160f83bd2f0369d197caf936cb96ab42b33c00603c96049eed4480": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "791883489600a6ce23c69e9df2ba3047050f90927718e11ed340a512ee00b610": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "796cb5511a3790700d76213ba80f0079db526e38eebcfea72e9bf9961c36674f": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "Não há suspeita de fraude (DOC-SEG não se aplica) nem falha do restaurante ou da transportadora (DOC-FALHA não se aplica). O caso é regido pelo DOC-CANCEL, segundo o qual o cancelamento antes do despacho é permitido e, após o despacho, normalmente é negado. A exceção de até 1 hora após o despacho vale apenas para clientes premium, e este cliente não é premium. Como a informação sobre o despacho é nula, não dá para saber se o cancelamento ocorreu antes ou depois dele, e o resultado muda conforme esse fato. Por isso o caso deve ir para revisão humana, para confirmar o status do despacho."
+    }
+  },
+  "7e3181d1c15be74b2b4f8858d45cac3d5b0ee6e870132ab6277675371bde5b55": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-FALHA",
+      "justificativa": "A encomenda foi extraviada pela transportadora (falha_origem = transportadora). Pelo DOC-FALHA, falha causada pela transportadora torna o pedido elegível a reembolso, exceto quando há fraude suspeita. Neste caso não há suspeita de fraude, então a regra de segurança do DOC-SEG não se aplica. O DOC-CANCEL também não se aplica, porque não houve cancelamento pelo cliente, embora o pedido já tivesse sido despachado. Por isso, o reembolso é permitido."
+    }
+  },
+  "81e2fcead384d7d753e25c1fbdbead7002eb52f11256fef93e9bd8231bc71fb2": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou o pedido depois do despacho. Segundo o DOC-CANCEL, cancelamento após o despacho normalmente é negado. A única exceção vale para cliente premium que cancela até 1 hora após o despacho, e este cliente não é premium. Por isso, a ausência do dado de horas após o despacho não altera o resultado. Não há fraude suspeita, então o DOC-SEG não se aplica. Também não há falha do restaurante ou da transportadora, então o DOC-FALHA não se aplica. O reembolso é negado."
+    }
+  },
+  "84f5340fcc8a4df316b83f725f464e482d7864e61d753164ffca6af076422c7b": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O pedido já foi despachado e, pela regra geral do DOC-CANCEL, cancelamentos após o despacho são normalmente negados. A política, porém, abre uma exceção: cliente premium que cancela até 1 hora depois do despacho (inclusive) pode ser reembolsado. Este cliente é premium e cancelou 0,5 hora após o despacho, dentro desse prazo. Não há fraude suspeita, então a regra de precedência do DOC-SEG não se aplica. Também não há falha do restaurante ou da transportadora (falha_origem: nenhuma), logo nenhuma falha prioritária afasta a exceção. O reembolso é permitido."
+    }
+  },
+  "87730640d21c68546b681cd14f459c06052208c2dfc1e148824a8316dc18206f": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documentos_citados": [
+        "DOC-FALHA"
+      ],
+      "resposta": "O reembolso é permitido porque o caso registra uma falha causada pelo restaurante, o que, conforme o documento \"Falhas operacionais\", gera elegibilidade de reembolso. A única exceção prevista no documento é fraude suspeita, e não há suspeita de fraude neste caso. O documento não trata do pedido de cancelamento feito pelo usuário, e a regra aplicada (REG-FALHA) considerou a falha operacional do restaurante como fundamento da decisão."
+    }
+  },
+  "90dd2b01928722fc88980c5eba8eaa5fcd2baf7763331404886485b059370f04": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "90f5720508e3867d157c9ccb163d0411535ccbbd00b52702b8a0b024a6eec987": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": false,
+      "divergencias": [
+        {
+          "aspecto": "precedencia",
+          "explicacao": "O documento e o REQ-05 preveem que o cliente premium que cancela até 1 hora após o despacho (inclusive) seja reembolsado, salvo fraude ou falha prioritária. Porém REG-CANCEL-ENVIADO (prioridade 25, NEGAR) é avaliada antes de REG-PREMIUM-EXC (prioridade 30). Suas condições (cancelamento_cliente = true e despachado = true) casam com todo caso premium dentro de 1 hora. Assim, esses cancelamentos são sempre negados e a exceção premium nunca é aplicada. A regra NEGAR deveria ter prioridade posterior à exceção ou excluir explicitamente o caso premium com horas_apos_despacho ≤ 1, como indica sua própria justificativa ('sem exceção aplicável').",
+          "regra_id": "REG-PREMIUM-EXC"
+        }
+      ]
+    }
+  },
+  "95c810f778b60c193dac09ef3df53d233de7405b0181c3c1c10fa9df8ef77caa": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-SEG",
+      "justificativa": "Há suspeita de fraude. Pelo DOC-SEG, fraude suspeita exige revisão humana, e a regra de segurança tem precedência sobre as regras de reembolso. Por isso, ela prevalece sobre o DOC-CANCEL, que negaria o pedido porque o cliente cancelou após o despacho (0,3 h depois). O DOC-FALHA não se aplica, pois não houve falha do restaurante ou da transportadora e há fraude suspeita. Nenhum documento prevê exceção para cliente premium, então esse status não altera a decisão. O caso deve ser encaminhado para revisão humana."
+    }
+  },
+  "962fb0e749bc1e1376a94414542d17af345694d852d13192d6edf2dea84fa5f1": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou o pedido antes do despacho. Pelo DOC-CANCEL, o cancelamento antes do despacho é permitido. Não há fraude suspeita, então a regra de precedência do DOC-SEG não se aplica. Também não há falha operacional que leve ao DOC-FALHA. Como o pedido não foi despachado, a exceção para clientes premium é irrelevante. O reembolso é permitido."
+    }
+  },
+  "995793720af5d77ae44671052fa6afbaa915144d0ec6d26bc43db622c9b0e77c": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou o pedido depois do despacho (despachado = true). Pelo DOC-CANCEL, cancelamento feito pelo cliente após o despacho é negado. Não há suspeita de fraude, então o DOC-SEG não exige revisão humana. Também não houve falha do restaurante ou da transportadora (falha_origem = nenhuma), portanto o DOC-FALHA não gera direito a reembolso. O cliente não é premium, e nenhum documento prevê exceção que mude essa conclusão."
+    }
+  },
+  "9ae68cce77c3970e9cdab3f0806796abe0254d8d388c3026ed705e2fc622e485": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento pode ser realizado. Segundo a política de Cancelamento de pedido, o cancelamento solicitado antes do despacho é permitido, e neste caso o pedido ainda não havia sido despachado quando o cliente cancelou. Por isso, as condições aplicáveis a pedidos já despachados (como a exceção para clientes premium) não se aplicam aqui."
+    }
+  },
+  "9ceb587ac4f72e5c6d7cf0a0dbabbb42e1824307757b85e0276e3c53fa29078a": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou o pedido depois do despacho, que já havia ocorrido há 10 horas. O DOC-CANCEL determina que cancelamento do cliente após o despacho é negado. Não há fraude suspeita, portanto a regra de segurança do DOC-SEG não se aplica. Também não há falha do restaurante ou da transportadora (falha_origem: nenhuma), então o DOC-FALHA não gera elegibilidade de reembolso. A condição de cliente comum não altera essa conclusão."
+    }
+  },
+  "9cef4220cb954524aa1e9eff491dd8c941ada0c4c6ce6115de069b19974fcb65": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O pedido já havia sido despachado quando o cliente o cancelou. Pelo DOC-CANCEL, cancelamentos após o despacho normalmente são negados. A exceção vale para cliente premium que cancela até 1 hora depois do despacho, com o limite incluído. O cliente é premium e cancelou exatamente 1,0 hora após o despacho, portanto está dentro do limite. Não há fraude suspeita, o que afasta a precedência do DOC-SEG. Também não há falha operacional prioritária (falha_origem: nenhuma). Por isso o reembolso é permitido."
+    }
+  },
+  "a10539f9ed824de545863e5e02f67d3a7cfa230a073d9e93d88b8a463c14913d": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": false,
+      "divergencias": [
+        {
+          "aspecto": "excecao",
+          "explicacao": "O documento diz que o cancelamento após o despacho é sempre negado. A regra (prioridade 25), alinhada ao REQ-05, permite o cancelamento a clientes premium com até 1 hora após o despacho, inclusive. Para esse caso a decisão passa a PERMITIR, e o documento não prevê essa exceção.",
+          "regra_id": "REG-PREMIUM-EXC"
+        },
+        {
+          "aspecto": "precedencia",
+          "explicacao": "O documento trata a negação após o despacho como absoluta ('sempre negado'). A regra, porém, tem prioridade 30 e só decide quando nenhuma regra anterior casa. REG-SEG (10, REVISAO_HUMANA), REG-FALHA (20, PERMITIR) e REG-PREMIUM-EXC (25, PERMITIR) vêm antes, e o REQ-03 restringe a negação a casos 'sem exceção aplicável'. O documento não reflete essas exceções nem essa precedência.",
+          "regra_id": "REG-CANCEL-ENVIADO"
+        },
+        {
+          "aspecto": "precedencia",
+          "explicacao": "O documento permite incondicionalmente o cancelamento antes do despacho. A regra tem prioridade 40, e o REQ-04 condiciona a permissão à ausência de 'fraude/falha prioritária'. Quando REG-SEG (prioridade 10) casa, a decisão é REVISAO_HUMANA, não PERMITIR. O documento omite essa precedência, que muda a decisão para casos com suspeita de fraude.",
+          "regra_id": "REG-CANCEL-PRE"
+        }
+      ]
+    }
+  },
+  "a16cfeddfe7c59a739f39abddcf8bf7b4f07c6c1abc854eaf184abd430256cf1": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O pedido já havia sido despachado e, nesse caso, o cancelamento normalmente é negado. O DOC-CANCEL, porém, prevê uma exceção: cliente premium que cancela até 1 hora após o despacho (inclusive) pode ser reembolsado. O cliente é premium e cancelou 0,0 hora após o despacho, dentro do prazo. Não há suspeita de fraude, então o DOC-SEG não se aplica. Também não há falha de origem, então o DOC-FALHA não se aplica. Nenhuma das ressalvas impede o reembolso."
+    }
+  },
+  "add6165954f81ab4bf2380321e129de283999d9527a5f75134955dcb2a2327b6": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "b8eced7f3c61e08d7ae4cffe8d14d2d03eb6a693f694bcbab46d47e0a6004df2": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "b9e831f81252ee01c22d978588883f413f23cfef6955a6f9ad697f81830ca18c": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-SEG",
+      "justificativa": "Embora o cliente seja premium e tenha cancelado 0,3 hora após o despacho, dentro do limite de 1 hora previsto na exceção do DOC-CANCEL, essa exceção se aplica 'salvo fraude'. Há fraude suspeita no caso. O DOC-SEG determina que fraude suspeita exige revisão humana e que a regra de segurança tem precedência sobre reembolsos. Por isso, o pedido deve ser encaminhado para revisão humana."
+    }
+  },
+  "bb853e287938b11b18ca42b7f32e6c947774981da98ad96e159e38b920bcc780": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "Segundo o DOC-CANCEL, o cancelamento após o despacho normalmente é negado. A única exceção vale para cliente premium que cancela até 1 hora depois do despacho. Neste caso, o cliente não é premium e cancelou 10 horas após o despacho, portanto a exceção não se aplica. Não há fraude suspeita, então o DOC-SEG não exige revisão humana. Também não houve falha do restaurante ou da transportadora (falha_origem: nenhuma), então o DOC-FALHA não gera elegibilidade de reembolso."
+    }
+  },
+  "bbd0992e59f020a9274aa0e28ee75a7efddac0cdef3de056dcc89ded12bfbdaa": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O pedido foi cancelado pelo cliente 1 hora após o despacho. O DOC-CANCEL estabelece que o cancelamento do cliente após o despacho é negado. Não há fraude suspeita, então a regra de segurança do DOC-SEG não se aplica. Também não houve falha do restaurante ou da transportadora, o que afasta a elegibilidade prevista no DOC-FALHA. Nenhum documento prevê exceção para clientes premium nem prazo de tolerância após o despacho."
+    }
+  },
+  "c3597daf6bafc7bdf621a9f5b6942db32885d61b8b5b71427486e8d92cb6bd31": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento está permitido para este caso. Embora o pedido já tenha sido despachado, o documento prevê exceção para cliente premium que cancela até 1 hora depois do despacho (inclusive), e este cliente desistiu 30 minutos após o despacho. Não há suspeita de fraude nem falha prioritária registrada, portanto o cliente pode ser reembolsado."
+    }
+  },
+  "c7fb7f0f11a957ac25498c7b845790f4db7c91df6e372905699e76c2845a6436": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documentos_citados": [
+        "DOC-SEG"
+      ],
+      "resposta": "Este caso deve ser encaminhado para revisão humana, pois há suspeita de fraude no pedido. Conforme o documento de Antifraude e validação, fraude suspeita exige revisão humana, e a regra de segurança tem precedência sobre reembolsos. Assim, mesmo sendo cliente premium e com cancelamento solicitado antes do despacho, o pedido não deve ser processado diretamente pelo atendimento."
+    }
+  },
+  "cada1294c63ccf6c920352281bf1edfc35eb34c432a9d370dd90f50074a06719": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento deve ser negado, pois o pedido já foi despachado e, conforme a política, cancelamentos após o despacho normalmente são negados. A única exceção prevista vale para clientes premium que cancelam até 1 hora após o despacho, e este cliente não é premium e cancelou 10 horas depois. Assim, nenhuma exceção da política se aplica a este caso."
+    }
+  },
+  "cd2b17fad35668605501e611acb76afe0d2a22b72fa0d0cd479a73dcfff680a0": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documentos_citados": [
+        "DOC-FALHA"
+      ],
+      "resposta": "O reembolso foi permitido porque o extravio da encomenda é uma falha causada pela transportadora, o que, segundo o documento \"Falhas operacionais\", gera elegibilidade de reembolso. A única exceção prevista é a suspeita de fraude, que não se aplica a este caso."
+    }
+  },
+  "cf79cd2b5cac1a64517dca97a1e71459e7655808c4619ae724dbbf99d555870d": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-FALHA",
+      "justificativa": "O pedido já havia sido despachado e o cliente não é premium. Pelo DOC-CANCEL, um cancelamento nessas condições normalmente seria negado. Porém, o próprio DOC-CANCEL ressalva casos de 'fraude ou falha prioritária', indicando que a regra de falha operacional prevalece. Pelo DOC-FALHA, uma falha causada pelo restaurante gera direito a reembolso, exceto se houver suspeita de fraude. Não há suspeita de fraude, então a regra de segurança do DOC-SEG não se aplica. O reembolso é devido com base na falha do restaurante, independentemente de o cliente ter pedido o cancelamento."
+    }
+  },
+  "d0787a87a7870d6ba18d281815a24a756d63d88184a73ab930f2cedd5a400209": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documentos_citados": [
+        "DOC-SEG"
+      ],
+      "resposta": "Este caso deve ser encaminhado para revisão humana, pois há suspeita de fraude e o documento Antifraude e validação determina que fraude suspeita exige revisão humana. Pelo mesmo documento, a regra de segurança tem precedência sobre reembolsos, então a condição de cliente premium não permite conceder a exceção solicitada neste atendimento. Informe ao cliente que a solicitação está em análise pela equipe responsável."
+    }
+  },
+  "d2266813ac2485aa4ba8ea911493dafbf1cea24ab9b79bc34f0e2565205f2739": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento pode ser aceito e o cliente reembolsado. Embora o pedido já tenha sido despachado, o DOC-CANCEL prevê exceção para cliente premium que cancela até 1 hora após o despacho, inclusive; neste caso o cancelamento ocorreu exatamente em 1 hora, portanto dentro do limite. Não há suspeita de fraude nem falha prioritária registrada, que seriam as ressalvas previstas no documento."
+    }
+  },
+  "d27d8bea9d6904ee474660cfc5f5c42dae5533b6f3c0f4310248e224f85416fb": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": false,
+      "divergencias": [
+        {
+          "aspecto": "excecao",
+          "explicacao": "O documento e o REQ-05 preveem uma exceção. O cliente premium que cancela até 1 hora após o despacho (inclusive) pode ser reembolsado, salvo fraude ou falha prioritária. A regra REG-CANCEL-ENVIADO nega todo cancelamento com despachado = true, sem verificar se o cliente é premium nem o tempo decorrido desde o despacho. Nenhuma regra de prioridade anterior implementa essa exceção, e o REQ-05 não está ligado a nenhuma regra. Assim, um cliente premium sem fraude que cancela, por exemplo, 30 minutos após o despacho recebe NEGAR, quando a política permitiria o reembolso.",
+          "regra_id": "REG-CANCEL-ENVIADO"
+        }
+      ]
+    }
+  },
+  "da31442593dba9fb134cc2fc1ac3f6d4f89609745ec71394981aea991f88a8c6": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento foi permitido porque, embora o pedido já tivesse sido despachado, a cliente é premium e cancelou dentro do limite de até 1 hora após o despacho (inclusive), conforme a exceção prevista em DOC-CANCEL. Também não há suspeita de fraude nem falha prioritária, que são as únicas situações que afastariam essa exceção. Assim, a cliente pode ser reembolsada."
+    }
+  },
+  "db486276b5252971a4f67b5219cf17fbb786fd612203292906f570a569e8ad72": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou o pedido antes do despacho (despachado = false). Pelo DOC-CANCEL, o cancelamento antes do despacho é permitido. Não há suspeita de fraude, então a regra de precedência do DOC-SEG não se aplica. Também não houve falha operacional, o que torna o DOC-FALHA irrelevante para este caso."
+    }
+  },
+  "dd6505820d3d1e08f5fbac84810e15e6562ffc638bdb7b28a7ac2d2e94fc9c42": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "ddae9f93edc616629c20f4b05e3cd27cb7d1e3aa893bcfae8741759ed79899fe": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "e0f494b499d732c702fff173b7fbef92a04896bc13bcaa7eb049e4dc4c92308f": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "e2145014dafd23fe912f921301dd990ff763e942c027580c224370eb565d8f45": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documentos_citados": [
+        "DOC-SEG"
+      ],
+      "resposta": "Este caso deve ser encaminhado para revisão humana, pois há suspeita de fraude. Segundo o documento de Antifraude e validação, fraude suspeita exige revisão humana, e a regra de segurança tem precedência sobre reembolsos. Assim, mesmo que a falha tenha sido da transportadora, não se deve conceder reembolso antes da análise da equipe responsável."
+    }
+  },
+  "e44eb36d83fb2eb6a6e895cec5d178a9a7eaf9d2e9a5e400e9ee7f8ed0178bf4": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "e8da755ab450430dade01f481522c5619604eab6ca00825e1da38ed9e9751386": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documentos_citados": [
+        "DOC-CANCEL"
+      ],
+      "resposta": "O cancelamento foi negado porque o pedido já havia sido despachado e, conforme a política de cancelamento, pedidos cancelados após o despacho normalmente não são reembolsados. A única exceção prevista vale para clientes premium que cancelam até 1 hora após o despacho (inclusive). Como este cliente cancelou 1h12 depois do envio, o prazo da exceção já tinha passado e ela não se aplica."
+    }
+  },
+  "f09efbe139eeff10b72b12ce14e0b01b9a35808f2fd7ba7f5de665db6c695921": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": false,
+      "divergencias": [
+        {
+          "aspecto": "limiar",
+          "explicacao": "O documento DOC-CANCEL e o critério de aceitação do REQ-05 limitam a exceção premium a cancelamentos feitos até 1 hora após o despacho (inclusive). A própria rationale da regra também fala em 1 hora. A condição executável, porém, usa horas_apos_despacho lte 2.0. Assim, um cliente premium que cancela entre 1 e 2 horas após o despacho recebe PERMITIR pela regra de prioridade 25. Pela política, esse caso deveria cair em REG-CANCEL-ENVIADO e receber NEGAR.",
+          "regra_id": "REG-PREMIUM-EXC"
+        }
+      ]
+    }
+  },
+  "f1c35441301fff44b25805f192e15d15b69a5a1da4205f69b3e29085a822580f": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": true,
+      "divergencias": []
+    }
+  },
+  "fa5b2ca7a0ee847f95b78626f2cbd94ca3c0c221f8222c3cdb6435cf6a761e37": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "NEGAR",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O cliente cancelou um pedido que já havia sido despachado. Pelo DOC-CANCEL, cancelamento do cliente após o despacho é negado. A ausência do número de horas após o despacho não altera o resultado, pois a política não prevê nenhuma exceção baseada em tempo: basta o pedido ter sido despachado. Os documentos também não preveem tratamento diferenciado para clientes premium. Não há fraude suspeita, o que afasta o DOC-SEG. Não há falha do restaurante ou da transportadora (falha_origem: nenhuma), o que afasta a elegibilidade pelo DOC-FALHA."
+    }
+  },
+  "fa6ae36d344e24db85fdec888227b0d269ad8e028c52b097be269a12ddef7220": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "consistente": false,
+      "divergencias": [
+        {
+          "aspecto": "decisao",
+          "explicacao": "O documento e o REQ-04 determinam que o cancelamento solicitado pelo cliente antes do despacho é permitido (PERMITIR). A regra, porém, decide NEGAR quando cancelamento_cliente = true e despachado = false. Assim, todo cancelamento pré-despacho sem fraude ou falha prioritária é negado, invertendo a política documentada.",
+          "regra_id": "REG-CANCEL-PRE"
+        }
+      ]
+    }
+  },
+  "fb04f20bb9c4f764059ad5927a31802b536c8f2fd7c52d08282c0126b7e4b298": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-CANCEL",
+      "justificativa": "O caso é um cancelamento feito pelo cliente, sem suspeita de fraude e sem falha operacional; por isso o DOC-SEG e o DOC-FALHA não se aplicam. Pelo DOC-CANCEL, o reembolso é permitido se o cancelamento ocorreu antes do despacho e negado se ocorreu depois. Como o campo 'despachado' está nulo, não há como saber qual das duas regras vale. Não é possível decidir com segurança, e o caso deve ir para revisão humana, que precisa confirmar se houve despacho."
+    }
+  },
+  "fb8c7dd894a95e2a4f42ecc906e015dfd96341876bd104e29e7e4fbd05c201a0": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "PERMITIR",
+      "documentos_citados": [
+        "DOC-FALHA"
+      ],
+      "resposta": "O reembolso está permitido, pois a falha no preparo do pedido foi causada pelo restaurante. Conforme o documento \"Falhas operacionais\", falhas originadas pelo restaurante ou pela transportadora geram elegibilidade de reembolso. A única exceção prevista é a suspeita de fraude, que não foi identificada neste caso."
+    }
+  },
+  "ff8a2d9f0c6e11df3c103c193d1fe774e5f5ff1c3ed82e848e3e2bfecc4ef616": {
+    "model": "claude-opus-5-5",
+    "response": {
+      "decisao": "REVISAO_HUMANA",
+      "documento_id": "DOC-SEG",
+      "justificativa": "Há fraude suspeita. Pelo DOC-SEG, fraude suspeita exige revisão humana, e essa regra de segurança tem precedência sobre as demais regras de reembolso. Embora o cancelamento tenha ocorrido após o despacho, o que levaria à negativa pelo DOC-CANCEL, prevalece a exigência de revisão humana. Não há falha do restaurante ou da transportadora que gere elegibilidade pelo DOC-FALHA."
+    }
+  }
+}

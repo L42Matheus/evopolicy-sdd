@@ -1,13 +1,13 @@
 """Agente com LLM: o modelo explica, a especificação decide.
 
-``SDDAssistant`` (condição P+S do protocolo):
+``SDDAssistant`` (condição P do protocolo; com o guarda L4, P+S):
   1. guarda SDD (L3, e opcionalmente L4): artefatos inconsistentes bloqueiam;
   2. motor determinístico escolhe a regra e a decisão;
   3. o LLM redige a resposta ao atendente citando só o documento da regra;
   4. a resposta passa por conferência (decisão e citação). Se o LLM falhar
      ou contradisser a decisão, usa-se a justificativa da regra (fail-closed).
 
-``LLMOnlyBaseline`` (condição P): o LLM lê os documentos e os fatos e decide
+``LLMOnlyBaseline`` (condição B1): o LLM lê os documentos e os fatos e decide
 sozinho. Serve de comparação; nunca é usado para decidir em produção.
 """
 from __future__ import annotations

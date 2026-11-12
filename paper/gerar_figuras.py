@@ -1,4 +1,10 @@
-"""Gera as figuras do projeto de pesquisa a partir de results/ do EvoPolicy-SDD v0.1.1."""
+"""Gera as figuras do projeto de pesquisa a partir de results/ do EvoPolicy-SDD v0.2.0.
+
+Se existirem resultados com LLM (``evopolicy mutate --semantic`` e
+``evopolicy llm-benchmark``), as figuras de mutação incluem o nível L4 e é
+gerada a figura do benchmark com LLM. Para reproduzir sem chave de API:
+``evopolicy mutate --semantic --offline --cache llm_cache/claude.json``.
+"""
 import csv, sys, os
 import matplotlib
 matplotlib.use("Agg")
@@ -22,7 +28,10 @@ from matplotlib.ticker import FuncFormatter
 BR = FuncFormatter(lambda v, _: (f"{v:.1f}" if v % 1 else f"{v:.0f}").replace(".", ","))
 br = lambda v: f"{v:.2f}".replace(".", ",")
 LV = {"L0_sem_verificacao": "L0\nsem verificação", "L1_versao": "L1\nversão",
-      "L2_estrutural": "L2\nestrutural", "L3_completa": "L3\ncompleta"}
+      "L2_estrutural": "L2\nestrutural", "L3_completa": "L3\ncompleta",
+      "L4_semantica": "L4\nsemântica (LLM)"}
+HAS_LLM = os.path.exists(os.path.join(RES, "mutation_llm_summary.csv"))
+MUT = "mutation_llm" if HAS_LLM else "mutation"
 
 def rows(name):
     with open(os.path.join(RES, name), newline="", encoding="utf-8") as f:
@@ -40,12 +49,12 @@ def bar_label(ax, bars, fmt):
                     textcoords="offset points", ha="center", va="bottom", fontsize=7.5, color=INK)
 
 # ---------- Figura 1: sensibilidade e taxa de alarme falso por nível ----------
-ms = rows("mutation_summary.csv")
+ms = rows(f"{MUT}_summary.csv")
 labels = [LV[r["level"]] for r in ms]
 sens = [float(r["sensitivity"]) for r in ms]
 far = [float(r["false_alarm_rate"]) for r in ms]
 tp = [int(r["tp"]) for r in ms]; fp = [int(r["fp"]) for r in ms]
-fig, ax = plt.subplots(figsize=(6.2, 3.0))
+fig, ax = plt.subplots(figsize=(6.6, 3.0))
 x = range(len(labels)); w = 0.36
 b1 = ax.bar([i - w/2 - 0.01 for i in x], sens, w, color=BLUE, label="Sensibilidade (derivas detectadas / 12)")
 b2 = ax.bar([i + w/2 + 0.01 for i in x], far, w, color=ORANGE, label="Taxa de alarme falso (benignas bloqueadas / 6)")
@@ -62,11 +71,11 @@ ax.legend(frameon=False, loc="upper left", fontsize=7.5)
 save(fig, "fig_sensibilidade_niveis")
 
 # ---------- Figura 2: matriz de detecção mutante x nível ----------
-mo = rows("mutation_observations.csv")
+mo = rows(f"{MUT}_observations.csv")
 muts = sorted({r["mutation"] for r in mo}, key=lambda m: (m[0] != "M", m))
-levels = list(LV)
+levels = [r["level"] for r in ms]
 det = {(r["mutation"], r["level"]): r for r in mo}
-fig, ax = plt.subplots(figsize=(6.4, 3.0))
+fig, ax = plt.subplots(figsize=(6.4, 0.6 * len(levels) + 0.6))
 ax.grid(False)
 for j, m in enumerate(muts):
     for i, lv in enumerate(levels):
@@ -99,7 +108,7 @@ metrics = [("emitted_wrong", "Decisões erradas emitidas"),
            ("emitted_divergent_evidence", "Decisões emitidas com\nevidência divergente"),
            ("blocked_benign_decisions", "Decisões bloqueadas em\nmudanças benignas")]
 fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.6))
-short = ["L0", "L1", "L2", "L3"]
+short = [r["level"][:2] for r in ms]
 for ax, (k, title) in zip(axes, metrics):
     vals = [int(r[k] or 0) for r in ms]
     bars = ax.bar(short, vals, 0.6, color=BLUE if k != "blocked_benign_decisions" else ORANGE)
@@ -133,4 +142,35 @@ ax.set_ylim(0, 1.22); ax.set_ylabel("Proporção (n = 18 casos)"); ax.yaxis.set_
 ax.grid(axis="x", visible=False)
 ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.16), ncol=3, fontsize=7)
 save(fig, "fig_benchmark_condicoes")
+
+# ---------- Figura 5: benchmark com LLM real (B1 x P) ----------
+if os.path.exists(os.path.join(RES, "llm_summary.csv")):
+    import json
+    model = json.load(open(os.path.join(RES, "llm_summary.json"), encoding="utf-8"))["model"]
+    ls = rows("llm_summary.csv")
+    names = {("docs_v2", "B1_llm_decide"): "B1: LLM decide\ndocs v2",
+             ("docs_v2", "P_sdd_llm_explica"): "P: SDD decide\ndocs v2",
+             ("docs_v1_antigos", "B1_llm_decide"): "B1: LLM decide\ndocs v1 (antigos)",
+             ("docs_v1_antigos", "P_sdd_llm_explica"): "P: SDD decide\ndocs v1 (antigos)"}
+    fig, ax = plt.subplots(figsize=(6.6, 2.9))
+    xs = list(range(len(ls)))
+    ok = [int(r["emitted_correct"]) for r in ls]
+    wr = [int(r["emitted_wrong"]) for r in ls]
+    bl = [int(r["blocked"]) for r in ls]
+    for vals, base, c, lab in ((ok, [0]*len(ls), BLUE, "Decisão correta emitida"),
+                               (wr, ok, ORANGE, "Decisão errada emitida"),
+                               (bl, [a+b for a, b in zip(ok, wr)], LIGHT, "Bloqueada (fail-closed)")):
+        bars = ax.bar(xs, vals, 0.55, bottom=base, color=c, label=lab,
+                      edgecolor=INK2 if c == LIGHT else c,
+                      linewidth=[0.6 if v else 0 for v in vals])
+        for b, v, b0 in zip(bars, vals, base):
+            if v:
+                ax.text(b.get_x() + b.get_width()/2, b0 + v/2, str(v), ha="center", va="center",
+                        fontsize=7.5, color="white" if c != LIGHT else INK)
+    ax.set_xticks(xs); ax.set_xticklabels([names[(r["scenario"], r["condition"])] for r in ls], fontsize=7.5)
+    ax.set_ylim(0, 21); ax.set_ylabel("Casos (n = 18)")
+    ax.text(1.0, -0.3, f"Modelo: {model}", transform=ax.transAxes, ha="right", fontsize=7, color=INK2)
+    ax.grid(axis="x", visible=False)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=3, fontsize=7)
+    save(fig, "fig_llm_benchmark")
 print("ok")

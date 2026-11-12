@@ -136,7 +136,7 @@ class AssistantTests(unittest.TestCase):
         res = run_llm_benchmark(SPEC, {"v1": KN1, "v2": KN}, CASES, FakeLLM(
             lambda s, u: {"decisao": "NEGAR", "documento_id": "DOC-CANCEL", "justificativa": "x"}
             if "decide pedidos" in s else explainer()(s, u)))
-        ps = [r for r in res["summary"] if r["condition"] == "PS_sdd_llm_explica"]
+        ps = [r for r in res["summary"] if r["condition"] == "P_sdd_llm_explica"]
         self.assertTrue(all(r["emitted_wrong"] == 0 for r in ps))
         stale = next(r for r in ps if r["scenario"] == "docs_v1_antigos")
         self.assertEqual(stale["blocked"], len(CASES))

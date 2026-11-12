@@ -21,12 +21,14 @@ A coevolução controlada de especificações, regras e documentos, com verifica
 - Benchmark offline reproduzível com cinco condições e casos rotulados.
 - **Camada de LLM (v0.2, opcional)** com Claude (Anthropic) ou GPT (OpenAI), pelos SDKs oficiais:
   - **L4 semântico** (`semantic-check`, `mutate --semantic`): o LLM compara regra executável, texto do documento e requisito, mirando as derivas ressincronizadas (M10/M11) que L1–L3 não veem. Falha ou recusa do modelo vira alerta (fail-closed).
-  - **Agente P+S** (`ask`): o guarda SDD e a regra determinística decidem; o LLM só redige a resposta. A resposta é conferida (mesma decisão, mesma evidência) e, se falhar, usa-se a justificativa da regra.
-  - **Baseline P** (`ask --llm-only`, `llm-benchmark`): o LLM decide sozinho a partir dos documentos, para comparação.
+  - **Agente P** (`ask`; com `--semantic-guard`, P+S): o guarda SDD e a regra determinística decidem; o LLM só redige a resposta. A resposta é conferida (mesma decisão, mesma evidência) e, se falhar, usa-se a justificativa da regra.
+  - **Baseline B1** (`ask --llm-only`, `llm-benchmark`): o LLM decide sozinho a partir dos documentos, para comparação.
   - **Cache de respostas** (`--cache`, `--offline`) para reproduzir experimentos sem nova chamada.
 - Testes unitários sem acesso à internet (o LLM é simulado) e pipeline CI do GitHub Actions.
 
-**Não implementado nesta versão:** embeddings, orquestração de ferramentas, coleta de casos reais, revisão por especialistas ou inferência estatística. Os resultados com LLM real ainda não foram coletados; os números atuais do estudo de mutações (L0–L3) são determinísticos.
+**Primeiros resultados com LLM real** (Claude Opus 5.5, uma execução em 12/11/2026, respostas em `llm_cache/claude.json`): o L4 detecta 12/12 derivas, incluindo M10 e M11, sem alarme falso novo (N05 continua bloqueado pelo digest do L3). Sozinha, a categoria semântica pega 8/12 e não acusa nenhuma benigna. No agente, o baseline B1 (LLM decide pelos documentos) erra 4/18 com documentos antigos, três deles exatamente os casos da exceção premium; a condição P não emite decisão errada e bloqueia as 18 com documentos antigos. GPT ainda não foi executado.
+
+**Não implementado nesta versão:** embeddings, orquestração de ferramentas, coleta de casos reais, revisão por especialistas ou inferência estatística.
 
 ## Estrutura
 

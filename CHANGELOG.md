@@ -5,7 +5,7 @@
 **Novo: camada de LLM (opcional, `pip install -e ".[llm]"`)**
 - `llm.py`: clientes Claude (`anthropic`, saída estruturada, `fallbacks: "default"`, tratamento de recusa) e GPT (`openai`, Responses API com esquema estrito); cache em arquivo e modo offline; LLM simulado para testes.
 - `semantic.py`: nível **L4_semantica**, um pedido por documento comparando regras, texto e requisitos; falha do modelo vira alerta.
-- `agent.py`: `SDDAssistant` (P+S: SDD decide, LLM redige e é conferido) e `LLMOnlyBaseline` (P: LLM decide).
+- `agent.py`: `SDDAssistant` (P: SDD decide, LLM redige e é conferido; P+S com guarda L4) e `LLMOnlyBaseline` (B1: LLM decide).
 - `experiment_llm.py` e CLI: `semantic-check`, `ask`, `llm-benchmark`, `mutate --semantic`, opções `--provider/--model/--effort/--cache/--offline`.
 - 18 testes novos, todos offline.
 
