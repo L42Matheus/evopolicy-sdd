@@ -196,53 +196,58 @@ Esta seção descreve o metamodelo, o fluxo de verificação e decisão, e as ca
 
 \textbf{Metamodelo.} Cada versão da especificação (\arq{specs/vN/specification.yaml}) declara: o esquema de fatos aceitos (tipos \code{bool}, \code{str} e \code{number}); requisitos com identificador estável e critério de aceitação; regras com prioridade, condição, decisão, justificativa, requisitos atendidos e documento associado; uma decisão padrão; e o \textit{digest} do texto aprovado de cada documento. A base documental (\arq{knowledge/vN/policies.json}) traz versão explícita e, para cada regra vinculada, uma marca de integridade (\textit{fingerprint}) SHA-256 \cite{nist2015sha} calculada sobre os atributos estruturados da regra, incluindo a justificativa.
 
-\textbf{Fluxo de verificação e decisão.} A Figura~\ref{fig:pipeline} apresenta o fluxo principal, organizado em seis etapas.
+\textbf{Fluxo de verificação e decisão.} A Figura~\ref{fig:pipeline} apresenta o fluxo da abordagem.
 
 \begin{figure}[!ht]
 \centering
-\resizebox{0.85\linewidth}{!}{
+\resizebox{\linewidth}{!}{
 \begin{tikzpicture}[
-  node distance=0.75cm and 1.2cm,
-  box/.style={
-    rectangle,
-    draw=blue!60,
-    fill=blue!8,
-    rounded corners=5pt,
-    text centered,
-    minimum height=1.1cm,
-    minimum width=2.cm,
-    text width=3.9cm,
-    font=\small,
-    line width=0.7pt
-  },
+  box/.style={rectangle, draw=blue!60, fill=blue!8, rounded corners=5pt, text centered,
+    minimum height=1.2cm, text width=3.3cm, font=\small, line width=0.7pt},
+  art/.style={box, draw=gray!70, fill=gray!10, minimum height=0.8cm},
   alert/.style={box, draw=red!60, fill=red!6},
-  arrow/.style={
-    ->,
-    >=Stealth,
-    thick,
-    color=gray!60
-  }
+  ok/.style={box, draw=green!50!black, fill=green!6},
+  guard/.style={box, draw=orange!70, fill=orange!10, text width=2.8cm},
+  group/.style={draw=gray!50, dashed, rounded corners=8pt, inner sep=10pt},
+  gtitle/.style={font=\small\bfseries, color=gray!80!black, anchor=south west},
+  arrow/.style={->, >=Stealth, thick, color=gray!60},
+  lbl/.style={font=\footnotesize, color=black, fill=white, inner sep=1pt}
 ]
-\node[box] (spec) {1. Especificação e\\ Base Documental vN};
-\node[box, right=of spec] (val) {2. Validação por\\ Categorias};
-\node[box, right=of val] (guard) {3. Guarda SDD\\ (\textit{fail-closed})};
-\node[alert, above=of guard] (bloq) {Bloqueio e\\ Revisão Humana};
-\node[box, below=of guard] (motor) {4. Motor Determinístico\\ por Prioridades};
-\node[box, left=of motor] (rec) {5. Recuperação\\ Documental};
-\node[box, left=of rec] (out) {6. Decisão Rastreável\\ e Registro Auditável};
+% ---------------- Fase 1: verificação antes da publicação
+\node[art] (spec) at (0,0.55)  {Especificação vN};
+\node[art] (docs) at (0,-0.55) {Documentos vN};
+\node[box] (val)  at (4.3,0)   {\textbf{1. Validador}\\ versão, vínculos,\\ \textit{fingerprint}, \textit{digest}};
+\node[guard] (grd) at (8.4,0)  {\textbf{2. Guarda}\\ tudo consistente?};
+\node[alert] (bloq) at (12.6,0) {\textbf{Bloqueio}\\ e revisão humana};
 
-\draw[arrow] (spec) -- (val);
-\draw[arrow] (val) -- (guard);
-\draw[arrow] (guard) -- node[right, font=\footnotesize, color=black]{divergência} (bloq);
-\draw[arrow] (guard) -- node[right, font=\footnotesize, color=black]{consistente} (motor);
-\draw[arrow] (motor) -- (rec);
-\draw[arrow] (rec) -- (out);
+\draw[arrow] (spec.east) -- (val.west |- spec.east);
+\draw[arrow] (docs.east) -- (val.west |- docs.east);
+\draw[arrow] (val) -- (grd);
+\draw[arrow] (grd) -- node[lbl, above=2pt]{não} (bloq);
+
+% ---------------- Fase 2: decisão em execução
+\node[art, text width=2.6cm] (req) at (0,-3.4) {Solicitação\\ (fatos do caso)};
+\node[box] (mot) at (4.3,-3.4) {\textbf{3. Motor de regras}\\ aplica a regra\\ por prioridade};
+\node[box] (rec) at (8.4,-3.4) {\textbf{4. Recuperação}\\ do documento\\ vinculado à regra};
+\node[ok]  (dec) at (12.6,-3.4) {\textbf{5. Decisão}\\ + regra, requisito,\\ documento e versão};
+
+\draw[arrow] (grd.south) -- ++(0,-1.15) -| node[lbl, pos=0.25, above]{sim: versão liberada} (mot.north);
+\draw[arrow] (req) -- (mot);
+\draw[arrow] (mot) -- (rec);
+\draw[arrow] (rec) -- (dec);
+
+\begin{scope}[on background layer]
+  \node[group, fit=(spec)(docs)(val)(grd)(bloq)(dec.east|-spec)] (g1) {};
+  \node[group, fit=(req)(mot)(rec)(dec)(spec.west|-req)] (g2) {};
+\end{scope}
+\node[gtitle] at (g1.north west) {Fase A: verificação antes de publicar uma versão};
+\node[gtitle, anchor=north west] at (g2.south west) {Fase B: decisão em execução (somente com artefatos consistentes)};
 \end{tikzpicture}}
 \caption{Fluxo de verificação e decisão do EvoPolicy-SDD.}
 \label{fig:pipeline}
 \end{figure}
 
-Na \textit{Etapa 1}, a especificação e a base documental de uma versão são carregadas. Na \textit{Etapa 2}, o validador verifica a consistência entre ambas e devolve os problemas encontrados, cada um associado a uma categoria. Na \textit{Etapa 3}, a guarda SDD bloqueia a publicação se houver qualquer divergência e encaminha os casos para revisão humana (política \textit{fail-closed}). Na \textit{Etapa 4}, com os artefatos consistentes, o motor aplica as regras em ordem de prioridade sobre fatos estruturados, usando a decisão padrão da especificação quando nenhuma regra se aplica. Na \textit{Etapa 5}, o documento vinculado à regra é recuperado como evidência. Na \textit{Etapa 6}, a decisão é registrada com a regra, o requisito e o documento citados, além dos \textit{digests} da especificação, da base documental e dos fatos, o que permite \textit{replay} e auditoria. As decisões de projeto do protótipo seguem um registro curto de contexto, decisão e consequências, inspirado em registros de decisões de arquitetura \cite{nygard2011adr}.
+O fluxo tem duas fases. Na \textit{Fase A}, executada a cada nova versão da política, o validador (1) confere a especificação e os documentos daquela versão e devolve os problemas encontrados, cada um associado a uma categoria. A guarda (2) só libera a versão se não houver nenhuma divergência; caso contrário, a versão é bloqueada e encaminhada para revisão humana (política \textit{fail-closed}). Na \textit{Fase B}, executada a cada solicitação, o motor (3) aplica as regras em ordem de prioridade sobre os fatos do caso, usando a decisão padrão da especificação quando nenhuma regra se aplica; a recuperação (4) busca o documento vinculado à regra aplicada; e a decisão (5) é registrada com a regra, o requisito, o documento e os \textit{digests} da especificação, da base documental e dos fatos, o que permite reproduzir e auditar cada decisão. As decisões de projeto do protótipo seguem um registro curto de contexto, decisão e consequências, inspirado em registros de decisões de arquitetura \cite{nygard2011adr}.
 
 \textbf{Categorias de verificação e níveis de ablação.} Para que a detecção possa ser atribuída a cada mecanismo, e não ao validador como um todo, cada problema pertence a uma categoria, e os níveis L0--L3 ativam subconjuntos cumulativos dessas categorias (Tabela~\ref{tab:niveis}). O nível L1 representa o versionamento convencional que qualquer equipe pode adotar; os ganhos atribuíveis à verificação SDD são, portanto, as diferenças entre L1 e L2/L3.
 
