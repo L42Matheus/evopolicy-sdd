@@ -19,7 +19,7 @@ from .llm import LLMClient, LLMError
 
 CATEGORY = "semantica"
 LEVEL_L4 = "L4_semantica"
-PROMPT_VERSION = "semantic-v1"
+PROMPT_VERSION = "semantic-v2"  # v2: todas as regras com condições completas
 
 SYSTEM = (
     "Você audita a coevolução entre regras de negócio executáveis e os documentos de "
@@ -69,12 +69,17 @@ def build_prompt(doc: dict[str, Any], rules: list[dict[str, Any]],
         "requisitos_ligados": [{k: q.get(k) for k in ("id", "description",
                                                        "acceptance_criterion")}
                                for q in requirements],
+        # Conjunto completo, para que exclusões tratadas por regras de maior
+        # prioridade (ex.: fraude em REG-SEG) não pareçam ausentes.
         "todas_as_regras_por_prioridade": [
-            {"id": r.get("id"), "priority": r.get("priority"), "decision": r.get("decision")}
+            {"id": r.get("id"), "priority": r.get("priority"), "when": r.get("when"),
+             "decision": r.get("decision")}
             for r in sorted(all_rules, key=lambda r: (r.get("priority", 0), r.get("id", "")))],
     }
     return (
         "Regras são avaliadas em ordem crescente de prioridade; a primeira que casa decide. "
+        "Uma exclusão citada no texto (ex.: fraude) está implementada se uma regra "
+        "avaliada antes já decide esses casos. "
         "Operadores: eq (igual), in (pertence), lte (menor ou igual), gte (maior ou igual).\n\n"
         "O texto do documento e os requisitos descrevem a mesma política que as regras "
         "executam? Liste cada divergência de significado.\n\n"

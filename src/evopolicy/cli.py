@@ -21,6 +21,8 @@ from .agent import LLMOnlyBaseline, SDDAssistant
 from .core import PolicyAgent
 from .experiment_llm import run_llm_benchmark
 from .mutations import run_mutation_study
+from .retrieval import (DEFAULT_THRESHOLD, DEFAULT_TOP_K, CachedEmbedder, OpenAIEmbedder,
+                        SemanticRetriever)
 from .semantic import SemanticVerifier
 from .project import (available_versions, find_root, knowledge_path, load_agent,
                       load_cases, load_knowledge, load_spec, spec_path)
@@ -41,6 +43,30 @@ def _llm_args(p: argparse.ArgumentParser, cache_required: bool = False) -> None:
                    help="Arquivo JSON de cache das respostas (reprodutibilidade)")
     g.add_argument("--offline", action="store_true",
                    help="Usa só o cache; nenhuma chamada de rede")
+
+
+def _rag_args(p: argparse.ArgumentParser) -> None:
+    g = p.add_argument_group("RAG (B1-RAG)")
+    g.add_argument("--rag", action="store_true",
+                   help="Baseline com recuperação semântica por embeddings (OpenAI)")
+    g.add_argument("--embed-cache", default=None, help="Cache dos embeddings (JSON)")
+    g.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
+    g.add_argument("--threshold", type=float, default=DEFAULT_THRESHOLD,
+                   help="Similaridade mínima; abaixo dela, revisão humana sem LLM")
+
+
+def _retriever_factory(args):
+    if not args.rag:
+        return None
+    if args.offline:
+        if not args.embed_cache:
+            raise LLMError("Modo offline com --rag exige --embed-cache")
+        embedder = CachedEmbedder(None, args.embed_cache, offline=True)
+    else:
+        embedder = OpenAIEmbedder()
+        if args.embed_cache:
+            embedder = CachedEmbedder(embedder, args.embed_cache)
+    return lambda kn: SemanticRetriever(kn, embedder, args.top_k, args.threshold)
 
 
 def _client(args):
@@ -102,10 +128,12 @@ def build_parser() -> argparse.ArgumentParser:
                    help="Também bloqueia se o L4 apontar divergência")
     a.add_argument("--llm-only", action="store_true",
                    help="Baseline B1: o LLM decide sozinho a partir dos documentos")
+    _rag_args(a)
     _llm_args(a)
 
     lb = commands.add_parser("llm-benchmark", help="Compara B1 (LLM decide) e P (SDD decide, LLM explica)")
     lb.add_argument("--output", default=None, help="Padrão: <root>/results")
+    _rag_args(lb)
     _llm_args(lb)
     return parser
 
@@ -219,7 +247,8 @@ def _main(argv: list[str] | None = None) -> int:
         kn = load_knowledge(root, args.doc_version or args.spec_version)
         llm = _client(args)
         if args.llm_only:
-            _print(LLMOnlyBaseline(kn, llm).decide(case))
+            factory = _retriever_factory(args)
+            _print(LLMOnlyBaseline(kn, llm, factory(kn) if factory else None).decide(case))
             return 0
         extra = []
         if args.semantic_guard:
@@ -232,7 +261,8 @@ def _main(argv: list[str] | None = None) -> int:
         out = Path(args.output) if args.output else root / "results"
         res = run_llm_benchmark(load_spec(root, "v2"),
                                 {v: load_knowledge(root, v) for v in ("v1", "v2")},
-                                load_cases(root), _client(args), out)
+                                load_cases(root), _client(args), out,
+                                retriever_factory=_retriever_factory(args))
         _print({"model": res["model"], "summary": res["summary"]})
         return 0
     return 1

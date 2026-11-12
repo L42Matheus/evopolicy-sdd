@@ -222,3 +222,40 @@ class ClientWiringTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class RetrievalTests(unittest.TestCase):
+    def test_semantic_retriever_ranks_and_caches(self):
+        from evopolicy.retrieval import CachedEmbedder, HashingEmbedder, SemanticRetriever, case_query
+        with TemporaryDirectory() as tmp:
+            path = Path(tmp) / "emb.json"
+            r = SemanticRetriever(KN, CachedEmbedder(HashingEmbedder(), path), top_k=2)
+            hits = r.retrieve(case_query(CASE["C03"]))
+            self.assertEqual(len(hits), 2)
+            self.assertGreaterEqual(hits[0]["score"], hits[1]["score"])
+            offline = CachedEmbedder(None, path, offline=True, model="hashing-256")
+            self.assertEqual(SemanticRetriever(KN, offline).retrieve(case_query(CASE["C03"]))[0]["id"],
+                             hits[0]["id"])
+
+    def test_rag_baseline_low_confidence_skips_llm(self):
+        from evopolicy.retrieval import HashingEmbedder, SemanticRetriever
+        llm = FakeLLM(lambda s, u: {"decisao": "PERMITIR", "documento_id": "x", "justificativa": "x"})
+        out = LLMOnlyBaseline(KN, llm, SemanticRetriever(KN, HashingEmbedder(), threshold=1.01)
+                              ).decide(CASE["C05"])
+        self.assertEqual(out["status"], "REVISAO_HUMANA")
+        self.assertEqual(llm.calls, [])
+
+    def test_rag_baseline_sends_only_retrieved_docs(self):
+        from evopolicy.retrieval import HashingEmbedder, SemanticRetriever
+        llm = FakeLLM(lambda s, u: {"decisao": "PERMITIR", "documento_id": "x", "justificativa": "x"})
+        LLMOnlyBaseline(KN, llm, SemanticRetriever(KN, HashingEmbedder(), top_k=1, threshold=0)
+                        ).decide(CASE["C05"])
+        self.assertEqual(len(_payload(llm.calls[0][1])["documentos"]), 1)
+
+    def test_benchmark_with_rag_condition(self):
+        from evopolicy.retrieval import HashingEmbedder, SemanticRetriever
+        res = run_llm_benchmark(SPEC, {"v1": KN1, "v2": KN}, CASES, FakeLLM(
+            lambda s, u: {"decisao": "NEGAR", "documento_id": "DOC-CANCEL", "justificativa": "x"}
+            if "decide pedidos" in s else explainer()(s, u)),
+            retriever_factory=lambda kn: SemanticRetriever(kn, HashingEmbedder(), threshold=0))
+        self.assertIn("B1R_rag_llm_decide", {r["condition"] for r in res["summary"]})

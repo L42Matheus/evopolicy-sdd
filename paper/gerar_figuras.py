@@ -30,12 +30,25 @@ br = lambda v: f"{v:.2f}".replace(".", ",")
 LV = {"L0_sem_verificacao": "L0\nsem verificação", "L1_versao": "L1\nversão",
       "L2_estrutural": "L2\nestrutural", "L3_completa": "L3\ncompleta",
       "L4_semantica": "L4\nsemântica (LLM)"}
-HAS_LLM = os.path.exists(os.path.join(RES, "mutation_llm_summary.csv"))
-MUT = "mutation_llm" if HAS_LLM else "mutation"
 
-def rows(name):
-    with open(os.path.join(RES, name), newline="", encoding="utf-8") as f:
+def rows(name, base=None):
+    with open(os.path.join(base or RES, name), newline="", encoding="utf-8") as f:
         return list(csv.DictReader(f))
+
+# Resultados L4 por modelo: results/ (Claude, padrão) e results/<subdir>/ (outros modelos)
+L4_RUNS = []  # (rótulo curto, diretório)
+for sub, label in (("", "Claude"), ("gpt", "GPT")):
+    d = os.path.join(RES, sub)
+    if os.path.exists(os.path.join(d, "mutation_llm_summary.csv")):
+        L4_RUNS.append((label, d))
+
+ms = rows("mutation_summary.csv")
+mo = rows("mutation_observations.csv")
+for label, d in L4_RUNS:
+    key = f"L4_{label}"
+    LV[key] = f"L4\nsemântica\n{label}"
+    ms += [dict(r, level=key) for r in rows("mutation_llm_summary.csv", d) if r["level"] == "L4_semantica"]
+    mo += [dict(r, level=key) for r in rows("mutation_llm_observations.csv", d) if r["level"] == "L4_semantica"]
 
 def save(fig, name):
     for ext in ("pdf", "png"):
@@ -49,7 +62,6 @@ def bar_label(ax, bars, fmt):
                     textcoords="offset points", ha="center", va="bottom", fontsize=7.5, color=INK)
 
 # ---------- Figura 1: sensibilidade e taxa de alarme falso por nível ----------
-ms = rows(f"{MUT}_summary.csv")
 labels = [LV[r["level"]] for r in ms]
 sens = [float(r["sensitivity"]) for r in ms]
 far = [float(r["false_alarm_rate"]) for r in ms]
@@ -71,7 +83,6 @@ ax.legend(frameon=False, loc="upper left", fontsize=7.5)
 save(fig, "fig_sensibilidade_niveis")
 
 # ---------- Figura 2: matriz de detecção mutante x nível ----------
-mo = rows(f"{MUT}_observations.csv")
 muts = sorted({r["mutation"] for r in mo}, key=lambda m: (m[0] != "M", m))
 levels = [r["level"] for r in ms]
 det = {(r["mutation"], r["level"]): r for r in mo}
@@ -108,10 +119,11 @@ metrics = [("emitted_wrong", "Decisões erradas emitidas"),
            ("emitted_divergent_evidence", "Decisões emitidas com\nevidência divergente"),
            ("blocked_benign_decisions", "Decisões bloqueadas em\nmudanças benignas")]
 fig, axes = plt.subplots(1, 3, figsize=(6.6, 2.6))
-short = [r["level"][:2] for r in ms]
+short = [r["level"][:2] if not r["level"].startswith("L4_") else "L4-" + r["level"][3] for r in ms]
 for ax, (k, title) in zip(axes, metrics):
     vals = [int(r[k] or 0) for r in ms]
     bars = ax.bar(short, vals, 0.6, color=BLUE if k != "blocked_benign_decisions" else ORANGE)
+    ax.tick_params(axis="x", labelsize=6.5)
     bar_label(ax, bars, lambda h: f"{int(h)}")
     ax.set_title(title, fontsize=8, color=INK)
     ax.set_ylim(0, max(vals) * 1.2 if max(vals) else 1)
@@ -143,34 +155,41 @@ ax.grid(axis="x", visible=False)
 ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.16), ncol=3, fontsize=7)
 save(fig, "fig_benchmark_condicoes")
 
-# ---------- Figura 5: benchmark com LLM real (B1 x P) ----------
-if os.path.exists(os.path.join(RES, "llm_summary.csv")):
+# ---------- Figura 5: benchmark com LLM real (B1 x P), um painel por modelo ----------
+BENCH = [(label, d) for label, d in L4_RUNS if os.path.exists(os.path.join(d, "llm_summary.csv"))]
+if BENCH:
     import json
-    model = json.load(open(os.path.join(RES, "llm_summary.json"), encoding="utf-8"))["model"]
-    ls = rows("llm_summary.csv")
-    names = {("docs_v2", "B1_llm_decide"): "B1: LLM decide\ndocs v2",
-             ("docs_v2", "P_sdd_llm_explica"): "P: SDD decide\ndocs v2",
-             ("docs_v1_antigos", "B1_llm_decide"): "B1: LLM decide\ndocs v1 (antigos)",
-             ("docs_v1_antigos", "P_sdd_llm_explica"): "P: SDD decide\ndocs v1 (antigos)"}
-    fig, ax = plt.subplots(figsize=(6.6, 2.9))
-    xs = list(range(len(ls)))
-    ok = [int(r["emitted_correct"]) for r in ls]
-    wr = [int(r["emitted_wrong"]) for r in ls]
-    bl = [int(r["blocked"]) for r in ls]
-    for vals, base, c, lab in ((ok, [0]*len(ls), BLUE, "Decisão correta emitida"),
-                               (wr, ok, ORANGE, "Decisão errada emitida"),
-                               (bl, [a+b for a, b in zip(ok, wr)], LIGHT, "Bloqueada (fail-closed)")):
-        bars = ax.bar(xs, vals, 0.55, bottom=base, color=c, label=lab,
-                      edgecolor=INK2 if c == LIGHT else c,
-                      linewidth=[0.6 if v else 0 for v in vals])
-        for b, v, b0 in zip(bars, vals, base):
-            if v:
-                ax.text(b.get_x() + b.get_width()/2, b0 + v/2, str(v), ha="center", va="center",
-                        fontsize=7.5, color="white" if c != LIGHT else INK)
-    ax.set_xticks(xs); ax.set_xticklabels([names[(r["scenario"], r["condition"])] for r in ls], fontsize=7.5)
-    ax.set_ylim(0, 21); ax.set_ylabel("Casos (n = 18)")
-    ax.text(1.0, -0.3, f"Modelo: {model}", transform=ax.transAxes, ha="right", fontsize=7, color=INK2)
-    ax.grid(axis="x", visible=False)
-    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.15), ncol=3, fontsize=7)
+    cond_names = {"B1_llm_decide": "B1", "B1R_rag_llm_decide": "B1\nRAG",
+                  "P_sdd_llm_explica": "P"}
+    names = {(sc, c): n for sc in ("docs_v2", "docs_v1_antigos") for c, n in cond_names.items()}
+    fig, axes = plt.subplots(1, len(BENCH), figsize=(6.8, 3.0), sharey=True, squeeze=False)
+    for ax, (label, d) in zip(axes[0], BENCH):
+        model = json.load(open(os.path.join(d, "llm_summary.json"), encoding="utf-8"))["model"]
+        ls = rows("llm_summary.csv", d)
+        xs = list(range(len(ls)))
+        ok = [int(r["emitted_correct"]) for r in ls]
+        wr = [int(r["emitted_wrong"]) for r in ls]
+        bl = [int(r["blocked"]) for r in ls]
+        for vals, base, c, lab in ((ok, [0]*len(ls), BLUE, "Decisão correta emitida"),
+                                   (wr, ok, ORANGE, "Decisão errada emitida"),
+                                   (bl, [a+b for a, b in zip(ok, wr)], LIGHT, "Bloqueada (fail-closed)")):
+            bars = ax.bar(xs, vals, 0.6, bottom=base, color=c, label=lab,
+                          edgecolor=INK2 if c == LIGHT else c,
+                          linewidth=[0.6 if v else 0 for v in vals])
+            for b, v, b0 in zip(bars, vals, base):
+                if v:
+                    ax.text(b.get_x() + b.get_width()/2, b0 + v/2, str(v), ha="center", va="center",
+                            fontsize=6.5, color="white" if c != LIGHT else INK)
+        ax.set_xticks(xs); ax.set_xticklabels([names[(r["scenario"], r["condition"])] for r in ls], fontsize=6.5)
+        half = len(ls) / 2
+        ax.axvline(half - 0.5, color=INK2, linewidth=0.8)
+        ax.text((half - 1) / 2, 19.6, "docs v2", ha="center", fontsize=7, color=INK2)
+        ax.text(half + (half - 1) / 2, 19.6, "docs v1 (antigos)", ha="center", fontsize=7, color=INK2)
+        ax.set_title(model, fontsize=8, color=INK)
+        ax.set_ylim(0, 21); ax.grid(axis="x", visible=False)
+    axes[0][0].set_ylabel("Casos (n = 18)")
+    h, l = axes[0][0].get_legend_handles_labels()
+    fig.legend(h, l, frameon=False, loc="upper center", bbox_to_anchor=(0.5, 1.07), ncol=3, fontsize=7)
+    fig.tight_layout()
     save(fig, "fig_llm_benchmark")
 print("ok")

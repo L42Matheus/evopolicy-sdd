@@ -7,8 +7,8 @@
   4. a resposta passa por conferência (decisão e citação). Se o LLM falhar
      ou contradisser a decisão, usa-se a justificativa da regra (fail-closed).
 
-``LLMOnlyBaseline`` (condição B1): o LLM lê os documentos e os fatos e decide
-sozinho. Serve de comparação; nunca é usado para decidir em produção.
+``LLMOnlyBaseline`` (condição B1, ou B1-RAG com recuperação semântica): o LLM
+lê os documentos e os fatos e decide sozinho. Serve de comparação; nunca é usado para decidir em produção.
 """
 from __future__ import annotations
 
@@ -122,15 +122,37 @@ class SDDAssistant:
 
 
 class LLMOnlyBaseline:
-    """Condição P: decisão tomada pelo LLM a partir dos documentos, sem regras."""
+    """Condição B1: decisão tomada pelo LLM a partir dos documentos, sem regras.
 
-    def __init__(self, knowledge: dict[str, Any], llm: LLMClient):
+    Sem ``retriever``, o LLM recebe todos os documentos. Com um
+    ``retrieval.SemanticRetriever`` (B1-RAG), recebe só os mais próximos da
+    pergunta; se nenhum passar do limiar de confiança, o caso vai para
+    revisão humana sem chamada ao LLM.
+    """
+
+    def __init__(self, knowledge: dict[str, Any], llm: LLMClient, retriever: Any = None):
         self.knowledge = knowledge
         self.llm = llm
+        self.retriever = retriever
 
     def decide(self, case: dict[str, Any]) -> dict[str, Any]:
+        source_docs = self.knowledge.get("documents", [])
+        retrieval = None
+        if self.retriever is not None:
+            from .retrieval import case_query
+            try:
+                hits = self.retriever.retrieve(case_query(case))
+            except LLMError as exc:
+                return {"case_id": case.get("id"), "status": "ERRO", "error": str(exc),
+                        "model": self.llm.model}
+            retrieval = [{"id": h["id"], "score": h["score"]} for h in hits]
+            if not self.retriever.confident(hits):
+                return {"case_id": case.get("id"), "status": "REVISAO_HUMANA",
+                        "document_id": None, "model": None, "retrieval": retrieval,
+                        "justificativa": "Confiança da recuperação abaixo do limiar."}
+            source_docs = [h["doc"] for h in hits]
         docs = [{"id": d.get("id"), "titulo": d.get("title"), "texto": d.get("content")}
-                for d in self.knowledge.get("documents", [])]
+                for d in source_docs]
         prompt = json.dumps({"pergunta": case.get("question", ""),
                              "fatos_do_caso": case.get("facts", {}), "documentos": docs},
                             ensure_ascii=False, indent=2, sort_keys=True)
@@ -140,7 +162,7 @@ class LLMOnlyBaseline:
             return {"case_id": case.get("id"), "status": "ERRO", "error": str(exc),
                     "model": self.llm.model}
         status = raw.get("decisao")
-        return {"case_id": case.get("id"),
+        return {"case_id": case.get("id"), "retrieval": retrieval,
                 "status": status if status in VALID_DECISIONS else "ERRO",
                 "document_id": raw.get("documento_id"),
                 "justificativa": raw.get("justificativa"), "model": self.llm.model}

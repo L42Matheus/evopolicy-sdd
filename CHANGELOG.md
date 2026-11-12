@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.0 — 12/11/2026
+
+**Novo**
+- `retrieval.py`: recuperação semântica por embeddings (OpenAI), cache de embeddings e limiar de confiança; condição **B1-RAG** (`llm-benchmark --rag`, `ask --llm-only --rag`).
+- Resultados com Claude Opus 5.5 e GPT-5.5 (caches em `llm_cache/`), figuras e paper atualizados.
+
+**Alterado**
+- Instrução do verificador semântico (semantic-v2): inclui todas as regras com condições. Na v1, o GPT acusava divergência até no par sincronizado por não ver que a regra de fraude decide antes da exceção premium.
+- Condições renomeadas para seguir o plano do paper: B1 (LLM decide) e P (SDD decide, LLM explica).
+
 ## 0.2.0 — 12/11/2026
 
 **Novo: camada de LLM (opcional, `pip install -e ".[llm]"`)**

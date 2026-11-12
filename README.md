@@ -1,6 +1,6 @@
 # EvoPolicy-SDD
 
-**Protótipo exploratório de pesquisa — v0.2.0 (12/11/2026)** · [Changelog](CHANGELOG.md)
+**Protótipo exploratório de pesquisa — v0.3.0 (12/11/2026)** · [Changelog](CHANGELOG.md)
 
 Uma abordagem orientada por especificações para detectar deriva entre regras de negócio e documentos recuperáveis por um agente baseado em políticas.
 
@@ -23,10 +23,14 @@ A coevolução controlada de especificações, regras e documentos, com verifica
   - **L4 semântico** (`semantic-check`, `mutate --semantic`): o LLM compara regra executável, texto do documento e requisito, mirando as derivas ressincronizadas (M10/M11) que L1–L3 não veem. Falha ou recusa do modelo vira alerta (fail-closed).
   - **Agente P** (`ask`; com `--semantic-guard`, P+S): o guarda SDD e a regra determinística decidem; o LLM só redige a resposta. A resposta é conferida (mesma decisão, mesma evidência) e, se falhar, usa-se a justificativa da regra.
   - **Baseline B1** (`ask --llm-only`, `llm-benchmark`): o LLM decide sozinho a partir dos documentos, para comparação.
+  - **Baseline B1-RAG** (`--rag`): igual a B1, mas com recuperação semântica por embeddings (OpenAI `text-embedding-3-small`) e limiar de confiança; abaixo do limiar, revisão humana sem chamar o LLM.
   - **Cache de respostas** (`--cache`, `--offline`) para reproduzir experimentos sem nova chamada.
 - Testes unitários sem acesso à internet (o LLM é simulado) e pipeline CI do GitHub Actions.
 
-**Primeiros resultados com LLM real** (Claude Opus 5.5, uma execução em 12/11/2026, respostas em `llm_cache/claude.json`): o L4 detecta 12/12 derivas, incluindo M10 e M11, sem alarme falso novo (N05 continua bloqueado pelo digest do L3). Sozinha, a categoria semântica pega 8/12 e não acusa nenhuma benigna. No agente, o baseline B1 (LLM decide pelos documentos) erra 4/18 com documentos antigos, três deles exatamente os casos da exceção premium; a condição P não emite decisão errada e bloqueia as 18 com documentos antigos. GPT ainda não foi executado.
+**Primeiros resultados com LLM real** (Claude Opus 5.5 e GPT-5.5, uma execução de cada em 12/11/2026; respostas em `llm_cache/`):
+- L4 detecta 12/12 derivas com os dois modelos, inclusive M10 e M11. Alarmes falsos: Claude 1/6 (N05, pelo digest do L3); GPT 3/6 (N05, N01 e N06).
+- Sozinha, a categoria semântica pega as mesmas 8/12 nos dois modelos; as 4 restantes são estruturais.
+- Agente: B1 (LLM decide pelos documentos) erra 4/18 com documentos antigos nos dois modelos; B1-RAG erra 5/18 (o documento de antifraude fica fora do top-2 em C17); P não emite decisão errada e bloqueia as 18.
 
 **Não implementado nesta versão:** embeddings, orquestração de ferramentas, coleta de casos reais, revisão por especialistas ou inferência estatística.
 
@@ -40,7 +44,7 @@ evopolicy-sdd/
 ├── knowledge/v2/policies.json
 ├── datasets/cases.json
 ├── src/evopolicy/{core,evolution,mutations,experiment,project,cli}.py
-├── src/evopolicy/{llm,semantic,agent,experiment_llm}.py   # camada de LLM
+├── src/evopolicy/{llm,semantic,agent,retrieval,experiment_llm}.py   # camada de LLM
 ├── tests/
 ├── docs/{PROJETO_DE_PESQUISA,ARQUITETURA,PROTOCOLO_EXPERIMENTAL,DECISOES}.md
 └── results/
@@ -74,7 +78,8 @@ evopolicy semantic-check --cache llm_cache/claude.json
 evopolicy ask --case C05 --cache llm_cache/claude.json
 evopolicy ask --case C05 --llm-only --provider openai --cache llm_cache/gpt.json
 evopolicy mutate --semantic --cache llm_cache/claude.json     # acrescenta L4
-evopolicy llm-benchmark --provider openai --cache llm_cache/gpt.json
+evopolicy llm-benchmark --provider openai --cache llm_cache/gpt.json --output results/gpt \
+    --rag --embed-cache llm_cache/embeddings.json   # acrescenta B1-RAG
 # Reexecução sem rede e sem custo, a partir do cache:
 evopolicy mutate --semantic --offline --cache llm_cache/claude.json
 ```

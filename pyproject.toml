@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "evopolicy-sdd"
-version = "0.2.0"
+version = "0.3.0"
 description = "Protótipo de coevolução e rastreabilidade de políticas e regras em agentes com RAG"
 requires-python = ">=3.10"
 dependencies = ["PyYAML>=6.0,<7"]
