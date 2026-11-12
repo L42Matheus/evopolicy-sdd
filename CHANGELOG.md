@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.2.0 — 12/11/2026
+
+**Novo: camada de LLM (opcional, `pip install -e ".[llm]"`)**
+- `llm.py`: clientes Claude (`anthropic`, saída estruturada, `fallbacks: "default"`, tratamento de recusa) e GPT (`openai`, Responses API com esquema estrito); cache em arquivo e modo offline; LLM simulado para testes.
+- `semantic.py`: nível **L4_semantica**, um pedido por documento comparando regras, texto e requisitos; falha do modelo vira alerta.
+- `agent.py`: `SDDAssistant` (P+S: SDD decide, LLM redige e é conferido) e `LLMOnlyBaseline` (P: LLM decide).
+- `experiment_llm.py` e CLI: `semantic-check`, `ask`, `llm-benchmark`, `mutate --semantic`, opções `--provider/--model/--effort/--cache/--offline`.
+- 18 testes novos, todos offline.
+
+**Alterado**
+- `PolicyAgent` aceita `extra_errors` (alertas externos, ex.: L4) no guarda.
+- Mutante N06 (evolução completa) também atualiza o critério de aceitação do REQ-05, para que a evolução seja de fato sincronizada no nível do requisito. Resultados L0–L3 inalterados.
+
 ## 0.1.1 — 11/11/2026
 
 Revisão da v0.1 antes da primeira publicação. Decisões em [docs/DECISOES.md](docs/DECISOES.md).

@@ -1,4 +1,8 @@
-"""Comandos: validate, decide, benchmark, diff, trace, fingerprint, mutate."""
+"""Comandos: validate, decide, benchmark, diff, trace, fingerprint, mutate.
+
+Com LLM (Claude ou GPT): semantic-check, ask, llm-benchmark e mutate --semantic.
+As chaves vêm só do ambiente (ANTHROPIC_API_KEY / OPENAI_API_KEY).
+"""
 from __future__ import annotations
 
 import argparse
@@ -9,16 +13,38 @@ from pathlib import Path
 import yaml
 
 from .core import LEVELS, check
+from .llm import PROVIDERS, LLMError, make_client
 from .evolution import (append_jsonl, decision_record, diff_specs, impact,
                         synchronize, trace_matrix)
 from .experiment import check_cases, run_benchmark
+from .agent import LLMOnlyBaseline, SDDAssistant
+from .core import PolicyAgent
+from .experiment_llm import run_llm_benchmark
 from .mutations import run_mutation_study
+from .semantic import SemanticVerifier
 from .project import (available_versions, find_root, knowledge_path, load_agent,
                       load_cases, load_knowledge, load_spec, spec_path)
 
 
 def _print(obj) -> None:
     print(json.dumps(obj, ensure_ascii=False, indent=2))
+
+
+def _llm_args(p: argparse.ArgumentParser, cache_required: bool = False) -> None:
+    g = p.add_argument_group("LLM")
+    g.add_argument("--provider", choices=PROVIDERS, default="anthropic",
+                   help="anthropic (Claude, padrão) ou openai (GPT)")
+    g.add_argument("--model", default=None,
+                   help="Padrão: claude-opus-5-5 / gpt-5.5 (ou EVOPOLICY_MODEL)")
+    g.add_argument("--effort", default=None, help="Esforço de raciocínio (padrão: medium)")
+    g.add_argument("--cache", default=None, required=cache_required,
+                   help="Arquivo JSON de cache das respostas (reprodutibilidade)")
+    g.add_argument("--offline", action="store_true",
+                   help="Usa só o cache; nenhuma chamada de rede")
+
+
+def _client(args):
+    return make_client(args.provider, args.cache, args.offline, args.model, args.effort)
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -58,10 +84,41 @@ def build_parser() -> argparse.ArgumentParser:
 
     m = commands.add_parser("mutate", help="Experimento de mutações (sensibilidade/alarmes falsos)")
     m.add_argument("--output", default=None, help="Padrão: <root>/results")
+    m.add_argument("--semantic", action="store_true", help="Inclui o nível L4 (LLM)")
+    _llm_args(m)
+
+    s = commands.add_parser("semantic-check",
+                            help="L4: o LLM compara regras, texto e requisitos")
+    s.add_argument("--spec-version", default="v2")
+    s.add_argument("--doc-version", default=None)
+    _llm_args(s)
+
+    a = commands.add_parser("ask", help="Agente: SDD decide e o LLM redige a resposta")
+    a.add_argument("--case", required=True)
+    a.add_argument("--question", default=None, help="Substitui a pergunta do caso")
+    a.add_argument("--spec-version", default="v2")
+    a.add_argument("--doc-version", default=None)
+    a.add_argument("--semantic-guard", action="store_true",
+                   help="Também bloqueia se o L4 apontar divergência")
+    a.add_argument("--llm-only", action="store_true",
+                   help="Baseline P: o LLM decide sozinho a partir dos documentos")
+    _llm_args(a)
+
+    lb = commands.add_parser("llm-benchmark", help="Compara P (LLM decide) e P+S (SDD + LLM)")
+    lb.add_argument("--output", default=None, help="Padrão: <root>/results")
+    _llm_args(lb)
     return parser
 
 
 def main(argv: list[str] | None = None) -> int:
+    try:
+        return _main(argv)
+    except LLMError as exc:
+        print(f"Erro de LLM: {exc}", file=sys.stderr)
+        return 3
+
+
+def _main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     try:
@@ -134,9 +191,49 @@ def main(argv: list[str] | None = None) -> int:
 
     if args.command == "mutate":
         out = Path(args.output) if args.output else root / "results"
+        verifier = SemanticVerifier(_client(args)) if args.semantic else None
         res = run_mutation_study(load_spec(root, "v2"), load_knowledge(root, "v2"),
-                                 load_knowledge(root, "v1"), load_cases(root), out)
+                                 load_knowledge(root, "v1"), load_cases(root), out,
+                                 verifier=verifier,
+                                 prefix="mutation_llm" if verifier else "mutation")
         _print(res["levels"])
+        return 0
+
+    if args.command == "semantic-check":
+        spec = load_spec(root, args.spec_version)
+        kn = load_knowledge(root, args.doc_version or args.spec_version)
+        verifier = SemanticVerifier(_client(args))
+        issues = verifier.check(spec, kn)
+        _print({"valid": not issues, "model": verifier.llm.model,
+                "errors": [str(i) for i in issues], "report": verifier.last_report})
+        return 2 if issues else 0
+
+    if args.command == "ask":
+        cases = {c["id"]: c for c in load_cases(root)}
+        if args.case not in cases:
+            parser.error(f"Caso não encontrado: {args.case}")
+        case = dict(cases[args.case])
+        if args.question:
+            case["question"] = args.question
+        spec = load_spec(root, args.spec_version)
+        kn = load_knowledge(root, args.doc_version or args.spec_version)
+        llm = _client(args)
+        if args.llm_only:
+            _print(LLMOnlyBaseline(kn, llm).decide(case))
+            return 0
+        extra = []
+        if args.semantic_guard:
+            extra = [str(i) for i in SemanticVerifier(llm).check(spec, kn)]
+        engine = PolicyAgent(spec, kn, enforce_sdd=True, extra_errors=extra)
+        _print(SDDAssistant(engine, llm).answer(case).to_dict())
+        return 0
+
+    if args.command == "llm-benchmark":
+        out = Path(args.output) if args.output else root / "results"
+        res = run_llm_benchmark(load_spec(root, "v2"),
+                                {v: load_knowledge(root, v) for v in ("v1", "v2")},
+                                load_cases(root), _client(args), out)
+        _print({"model": res["model"], "summary": res["summary"]})
         return 0
     return 1
 

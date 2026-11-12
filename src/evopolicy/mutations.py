@@ -9,6 +9,7 @@ mutante com rótulo de verdade definido a priori:
   deveria alertar).
 
 Os níveis L0-L3 de ``core.LEVELS`` são ablações cumulativas do validador.
+Com um ``SemanticVerifier`` (LLM), o estudo acrescenta o nível L4_semantica.
 O rótulo ``drift`` foi atribuído pelo autor; não há revisão independente.
 """
 from __future__ import annotations
@@ -138,6 +139,8 @@ def n06_evolucao_sincronizada(spec, kn):
     _rule(spec, "REG-PREMIUM-EXC")["rationale"] = "Exceção premium: pedido cancelado até 2 horas após despacho."
     d = _doc(kn, "DOC-CANCEL")
     d["content"] = d["content"].replace("até 1 hora", "até 2 horas")
+    q = next(q for q in spec["requirements"] if q["id"] == "REQ-05")
+    q["acceptance_criterion"] = q["acceptance_criterion"].replace("até 1 hora", "até 2 horas")
     return synchronize(spec, kn)
 
 
@@ -188,17 +191,30 @@ def _rate(num: int, den: int) -> float | None:
 
 
 def run_mutation_study(spec: dict, kn: dict, stale_kn: dict, cases: list[dict],
-                       output_dir: Path | None = None) -> dict[str, Any]:
-    """Executa todos os mutantes em todos os níveis e agrega as métricas."""
+                       output_dir: Path | None = None, verifier: Any = None,
+                       prefix: str = "mutation") -> dict[str, Any]:
+    """Executa todos os mutantes em todos os níveis e agrega as métricas.
+
+    ``verifier`` (``semantic.SemanticVerifier``) acrescenta o nível L4.
+    """
+    levels: dict[str, Any] = dict(LEVELS)
+    if verifier is not None:
+        levels["L4_semantica"] = "semantica"
     rows: list[dict[str, Any]] = []
     for m in MUTATIONS:
         ms, mk = apply(m, spec, kn, stale_kn)
         # Oráculo: para deriva, a política pretendida continua sendo a v2;
         # para mudança benigna, é o próprio mutante (evolução intencional).
         oracle_agent = PolicyAgent(ms, mk, enforce_sdd=False) if not m.drift else None
-        for level, cats in LEVELS.items():
-            issues = check(ms, mk, cats)
-            agent = PolicyAgent(ms, mk, enforce_sdd=True, categories=cats)
+        for level, cats in levels.items():
+            if cats == "semantica":
+                semantic = verifier.check(ms, mk)
+                issues = check(ms, mk, LEVELS["L3_completa"]) + semantic
+                agent = PolicyAgent(ms, mk, enforce_sdd=True,
+                                    extra_errors=[str(i) for i in semantic])
+            else:
+                issues = check(ms, mk, cats)
+                agent = PolicyAgent(ms, mk, enforce_sdd=True, categories=cats)
             wrong = blocked = divergent = 0
             for case in cases:
                 d = agent.decide(case)
@@ -218,7 +234,7 @@ def run_mutation_study(spec: dict, kn: dict, stale_kn: dict, cases: list[dict],
             })
 
     summary = []
-    for level in LEVELS:
+    for level in levels:
         lr = [r for r in rows if r["level"] == level]
         tp = sum(r["detected"] and r["drift"] for r in lr)
         fn = sum(not r["detected"] and r["drift"] for r in lr)
@@ -236,18 +252,21 @@ def run_mutation_study(spec: dict, kn: dict, stale_kn: dict, cases: list[dict],
             "blocked_benign_decisions": sum(r["blocked"] for r in lr if not r["drift"]),
         })
 
-    result = {"protocol": "offline-mutation-v0.1", "levels": summary, "observations": rows,
+    protocol = "offline-mutation-v0.1"
+    if verifier is not None:
+        protocol = f"llm-mutation-v0.2 ({getattr(verifier.llm, 'model', '?')})"
+    result = {"protocol": protocol, "levels": summary, "observations": rows,
               "mutations": [{"id": m.id, "family": m.family, "drift": m.drift,
                              "description": m.description} for m in MUTATIONS]}
     if output_dir is not None:
         output_dir = Path(output_dir)
         output_dir.mkdir(parents=True, exist_ok=True)
-        for name, data in (("mutation_observations.csv", rows), ("mutation_summary.csv", summary)):
+        for name, data in ((f"{prefix}_observations.csv", rows), (f"{prefix}_summary.csv", summary)):
             with open(output_dir / name, "w", newline="", encoding="utf-8") as f:
                 w = csv.DictWriter(f, fieldnames=list(data[0]))
                 w.writeheader()
                 w.writerows(data)
-        with open(output_dir / "mutation_summary.json", "w", encoding="utf-8") as f:
+        with open(output_dir / f"{prefix}_summary.json", "w", encoding="utf-8") as f:
             json.dump({k: v for k, v in result.items() if k != "observations"}, f,
                       indent=2, ensure_ascii=False)
     return result

@@ -1,8 +1,8 @@
 """Núcleo independente de provedor de LLM e de bibliotecas de embeddings.
 
-A validação é estrutural e criptográfica (fingerprints e digests), não
-equivalência semântica de linguagem natural. Nenhum resultado demonstra
-precisão de LLM.
+A validação aqui é estrutural e criptográfica (fingerprints e digests), não
+equivalência semântica de linguagem natural. A verificação semântica com LLM
+(nível L4) fica em ``semantic.py`` e entra no guarda via ``extra_errors``.
 
 Vínculos verificados (coevolução nos dois sentidos):
 
@@ -322,11 +322,13 @@ class PolicyAgent:
     """Motor determinístico com guarda SDD opcional (fail-closed)."""
 
     def __init__(self, spec: dict[str, Any], knowledge: dict[str, Any],
-                 enforce_sdd: bool = True, categories: Iterable[str] = FULL):
+                 enforce_sdd: bool = True, categories: Iterable[str] = FULL,
+                 extra_errors: Iterable[str] = ()):
         self.spec = spec
         self.knowledge = knowledge
         self.enforce_sdd = enforce_sdd
-        self.errors = validate(spec, knowledge, categories)
+        # extra_errors: alertas de verificações externas (ex.: L4 semântico)
+        self.errors = validate(spec, knowledge, categories) + list(extra_errors)
         self._docs = {d.get("id"): d for d in knowledge.get("documents", [])}
         self.spec_digest = canonical_digest(spec)
         self.knowledge_digest = canonical_digest(knowledge)

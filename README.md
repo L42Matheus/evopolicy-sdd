@@ -1,6 +1,6 @@
 # EvoPolicy-SDD
 
-**Protótipo exploratório de pesquisa — v0.1.1 (11/11/2026)** · [Changelog](CHANGELOG.md)
+**Protótipo exploratório de pesquisa — v0.2.0 (12/11/2026)** · [Changelog](CHANGELOG.md)
 
 Uma abordagem orientada por especificações para detectar deriva entre regras de negócio e documentos recuperáveis por um agente baseado em políticas.
 
@@ -19,9 +19,14 @@ A coevolução controlada de especificações, regras e documentos, com verifica
 - Motor determinístico de decisão sobre fatos **estruturados**, com trilha de regra e documentação.
 - Recuperador lexical local simples (ilustrativo; **não** é RAG semântico nem LLM).
 - Benchmark offline reproduzível com cinco condições e casos rotulados.
-- Testes unitários sem acesso à internet e pipeline CI do GitHub Actions.
+- **Camada de LLM (v0.2, opcional)** com Claude (Anthropic) ou GPT (OpenAI), pelos SDKs oficiais:
+  - **L4 semântico** (`semantic-check`, `mutate --semantic`): o LLM compara regra executável, texto do documento e requisito, mirando as derivas ressincronizadas (M10/M11) que L1–L3 não veem. Falha ou recusa do modelo vira alerta (fail-closed).
+  - **Agente P+S** (`ask`): o guarda SDD e a regra determinística decidem; o LLM só redige a resposta. A resposta é conferida (mesma decisão, mesma evidência) e, se falhar, usa-se a justificativa da regra.
+  - **Baseline P** (`ask --llm-only`, `llm-benchmark`): o LLM decide sozinho a partir dos documentos, para comparação.
+  - **Cache de respostas** (`--cache`, `--offline`) para reproduzir experimentos sem nova chamada.
+- Testes unitários sem acesso à internet (o LLM é simulado) e pipeline CI do GitHub Actions.
 
-**Não implementado nesta versão:** embeddings, modelo de linguagem, orquestração de ferramentas, coleta de casos reais, revisão por especialistas ou inferência estatística. O benchmark mede só o comportamento do protótipo deterministicamente, não a eficácia científica de SDD em produção.
+**Não implementado nesta versão:** embeddings, orquestração de ferramentas, coleta de casos reais, revisão por especialistas ou inferência estatística. Os resultados com LLM real ainda não foram coletados; os números atuais do estudo de mutações (L0–L3) são determinísticos.
 
 ## Estrutura
 
@@ -33,6 +38,7 @@ evopolicy-sdd/
 ├── knowledge/v2/policies.json
 ├── datasets/cases.json
 ├── src/evopolicy/{core,evolution,mutations,experiment,project,cli}.py
+├── src/evopolicy/{llm,semantic,agent,experiment_llm}.py   # camada de LLM
 ├── tests/
 ├── docs/{PROJETO_DE_PESQUISA,ARQUITETURA,PROTOCOLO_EXPERIMENTAL,DECISOES}.md
 └── results/
@@ -55,6 +61,24 @@ python -m unittest discover -s tests -v
 
 Os comandos procuram `specs/` e `knowledge/` no diretório atual (ou acima). Fora do repositório, use `--root CAMINHO` ou `EVOPOLICY_ROOT`. Também funciona via `PYTHONPATH=src python -m evopolicy ...` quando PyYAML está instalado.
 
+### Com LLM real (Claude ou GPT)
+
+```bash
+pip install -e ".[llm]"
+# Chaves só pelo ambiente (nunca por argumento ou commit):
+#   ANTHROPIC_API_KEY para --provider anthropic (padrão, modelo claude-opus-5-5)
+#   OPENAI_API_KEY    para --provider openai    (modelo gpt-5.5)
+evopolicy semantic-check --cache llm_cache/claude.json
+evopolicy ask --case C05 --cache llm_cache/claude.json
+evopolicy ask --case C05 --llm-only --provider openai --cache llm_cache/gpt.json
+evopolicy mutate --semantic --cache llm_cache/claude.json     # acrescenta L4
+evopolicy llm-benchmark --provider openai --cache llm_cache/gpt.json
+# Reexecução sem rede e sem custo, a partir do cache:
+evopolicy mutate --semantic --offline --cache llm_cache/claude.json
+```
+
+`--model` e `--effort` (ou `EVOPOLICY_MODEL`/`EVOPOLICY_EFFORT`) trocam modelo e esforço de raciocínio. Com Claude, a chamada usa saída JSON estruturada e o fallback do servidor (`fallbacks: "default"`), que repete um pedido recusado por política em outro modelo; uma recusa final vira alerta. Com GPT, usa a Responses API com esquema estrito e `store=False`. O cache guarda as respostas por hash do pedido e pode ser versionado para tornar o experimento reproduzível.
+
 ### Publicar uma nova versão da política
 
 1. Criar `specs/vN/` e `knowledge/vN/` e editar regras e textos.
@@ -62,7 +86,7 @@ Os comandos procuram `specs/` e `knowledge/` no diretório atual (ou acima). For
 3. **Revisar se o texto dos documentos expressa as regras** e só então `evopolicy fingerprint --version vN --write`.
 4. `evopolicy validate --spec-version vN` e testes.
 
-O passo 3 é o ponto frágil: recalcular marcas sem revisão contorna a verificação (mutações M10/M11).
+O passo 3 é o ponto frágil: recalcular marcas sem revisão contorna a verificação estrutural (mutações M10/M11). O `semantic-check` (L4) existe para pegar exatamente esse caso.
 
 ### Demonstração da inconsistência
 
