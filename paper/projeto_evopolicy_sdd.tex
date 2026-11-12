@@ -48,7 +48,7 @@
 %%%%%%%%%%%% Abstract %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \begin{abstract}
-AI agents that combine Large Language Models (LLMs), document retrieval and deterministic rules increasingly support operational decisions grounded in business policies. When these policies evolve, the retrieved text used as evidence, the requirement specification and the rule actually executed may drift apart without any visible failure. This research proposal presents \textit{EvoPolicy-SDD}, a specification-driven approach that keeps verifiable links among requirements, executable rules, retrievable documents and logged decisions, and blocks publication when these artifacts diverge. A deterministic prototype (35 automated tests) implements the metamodel, the decision engine, a validator organized into four cumulative levels and an exploratory mutation study. The full level detected 10 of 12 injected drifts with one false alarm among 6 benign changes; the two undetected drifts are semantic and delimit the reach of structural verification. The proposed study extends the change corpus, introduces real LLM-based agents, compares the approach with capability-matched baselines and evaluates LLM-assisted semantic verification.
+LLM-based agents increasingly support business decisions, such as approving a refund, by combining rules written in code with policy documents retrieved as justification. When a policy changes, these two artifacts are maintained separately and may stop saying the same thing: the agent keeps running without errors, but its decisions contradict their own justification. We call this \textit{coevolution drift}. This research proposal presents \textit{EvoPolicy-SDD}, a specification-driven approach that binds requirements, rules and documents in a versioned specification and blocks decisions when they diverge. A deterministic prototype (35 automated tests) and an exploratory mutation study show that conventional versioning detects 2 of 12 injected drifts, while the proposed structural checks detect 10 of 12, with one false alarm in 6 benign changes. The two missed drifts change meaning without changing structure, which motivates the core of the planned study: LLM-assisted semantic verification between rule and text, evaluated with real agents and systematic mutations.
 \end{abstract}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -56,7 +56,7 @@ AI agents that combine Large Language Models (LLMs), document retrieval and dete
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \sloppy
 \begin{resumo}
-Agentes de IA que combinam Modelos de Linguagem de Grande Escala (LLMs), recuperação de documentos e regras determinísticas apoiam cada vez mais decisões operacionais ancoradas em políticas de negócio. Quando essas políticas evoluem, o texto recuperado como evidência, a especificação de requisitos e a regra efetivamente executada podem divergir sem falha visível. Este projeto de pesquisa apresenta o \textit{EvoPolicy-SDD}, uma abordagem orientada por especificações que mantém vínculos verificáveis entre requisitos, regras executáveis, documentos recuperáveis e decisões registradas, e bloqueia a publicação quando esses artefatos divergem. Um protótipo determinístico (35 testes automatizados) implementa o metamodelo, o motor de decisão, um validador organizado em quatro níveis cumulativos e um estudo exploratório de mutações. O nível completo detectou 10 de 12 derivas injetadas, com um alarme falso em 6 mudanças benignas; as duas derivas não detectadas são semânticas e delimitam o alcance da verificação estrutural. O estudo proposto amplia o corpus de mudanças, introduz agentes com LLMs reais, compara a abordagem com \textit{baselines} de capacidade pareada e avalia a verificação semântica assistida por LLM.
+Agentes baseados em LLMs apoiam cada vez mais decisões de negócio, como aprovar um reembolso, combinando regras escritas em código com documentos de política recuperados como justificativa. Quando a política muda, esses dois artefatos são mantidos separadamente e podem deixar de dizer a mesma coisa: o agente continua funcionando sem erros, mas suas decisões passam a contradizer a própria justificativa. Neste trabalho, esse fenômeno é chamado de \textit{deriva de coevolução}. Este projeto de pesquisa apresenta o \textit{EvoPolicy-SDD}, uma abordagem orientada por especificações que amarra requisitos, regras e documentos numa especificação versionada e bloqueia decisões quando eles divergem. Um protótipo determinístico (35 testes automatizados) e um estudo exploratório de mutações mostram que o versionamento convencional detecta 2 de 12 derivas injetadas, enquanto as verificações estruturais propostas detectam 10 de 12, com um alarme falso em 6 mudanças benignas. As duas derivas não detectadas mudam o sentido sem mudar a estrutura, o que motiva o núcleo do estudo planejado: a verificação semântica entre regra e texto assistida por LLM, avaliada com agentes reais e mutações sistemáticas.
 \end{resumo}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -65,45 +65,126 @@ Agentes de IA que combinam Modelos de Linguagem de Grande Escala (LLMs), recuper
 \section{Introdu\c{c}\~ao}
 \label{sec1:intro}
 
-LLMs passaram a ser integrados a sistemas que tomam ou recomendam decisões em processos de negócio, frequentemente na forma de agentes que planejam, consultam ferramentas e produzem respostas justificadas \cite{yao2023react,wang2024agentsurvey}. Para ancorar essas respostas em conhecimento organizacional atualizado, é comum o uso de geração aumentada por recuperação (\textit{Retrieval-Augmented Generation}, RAG), em que trechos de documentos são recuperados e fornecidos ao modelo como evidência \cite{lewis2020rag,gao2023ragsurvey}. Em domínios como reembolso, crédito ou atendimento, contudo, parte das decisões não pode depender apenas da geração de texto: exige regras determinísticas, restrições obrigatórias e uma trilha auditável, inclusive por pressões regulatórias e de governança \cite{nist2023airmf,ue2024aiact,raji2020accountability}.
+Empresas têm usado agentes baseados em Modelos de Linguagem de Grande Escala (LLMs) para apoiar decisões operacionais, como aprovar um reembolso, liberar um crédito ou encaminhar um atendimento \cite{yao2023react,wang2024agentsurvey}. Para que essas decisões sigam as políticas da organização, os agentes costumam combinar duas fontes: \textit{regras de negócio escritas em código}, que garantem decisões previsíveis, e \textit{documentos de política em linguagem natural}, recuperados por busca semântica (\textit{Retrieval-Augmented Generation}, RAG) e apresentados como justificativa da decisão \cite{lewis2020rag,gao2023ragsurvey}. Esse desenho híbrido também atende a exigências de auditoria e de governança de IA \cite{nist2023airmf,ue2024aiact,raji2020accountability}.
 
-O resultado é uma arquitetura híbrida em que convivem ao menos quatro artefatos com ciclos de vida próprios: (i) a especificação de requisitos de negócio; (ii) as regras executáveis que implementam esses requisitos; (iii) os documentos de política usados como evidência pela recuperação; e (iv) o registro das decisões produzidas. Sistemas de software evoluem continuamente \cite{lehman1980laws}, e sistemas com componentes de aprendizado de máquina acumulam dívida técnica justamente nas dependências implícitas entre dados, configuração e código \cite{sculley2015debt,amershi2019se4ml}. Quando uma política muda, nada garante que os quatro artefatos mudem juntos.
+O problema surge quando a política muda. A regra no código e o texto do documento descrevem a mesma política, mas são mantidos em lugares diferentes, por pessoas diferentes e em momentos diferentes. Se apenas um deles for atualizado, o agente continua funcionando sem nenhum erro, mas passa a tomar decisões que contradizem a própria justificativa. Neste projeto, essa situação é chamada de \textbf{deriva de coevolução}: regra executável e documento de evidência deixam de dizer a mesma coisa após uma mudança de política. A Seção~\ref{sec2:problema} ilustra o problema com um exemplo.
 
-O problema investigado neste projeto é a \textit{deriva de coevolução}: a situação em que o documento recuperado para justificar uma decisão, a regra efetivamente aplicada e o requisito que a originou deixam de estar sincronizados após uma alteração de política. Essa deriva é silenciosa. A decisão pode continuar correta enquanto a evidência citada está obsoleta, ou a evidência pode estar atualizada enquanto a regra aplica um limiar antigo. Em ambos os casos a execução não falha, mas a decisão deixa de ser auditável.
+Esse tipo de divergência entre artefatos acoplados é conhecido em Engenharia de Software, por exemplo entre código e comentários \cite{tan2007icomment,wen2019codecomment} ou entre código e documentação \cite{aghajani2019docissues}. Em agentes de IA, porém, a consequência é mais grave, porque o texto divergente é entregue ao usuário como fundamento da decisão. Trabalhos recentes já transformam políticas em código de guarda para agentes \cite{zwerdling2025policy,datla2025executable}, mas tratam uma única versão da política; os próprios autores de \cite{zwerdling2025policy} apontam a gestão do ciclo de vida, quando política ou código mudam, como questão em aberto.
 
-Este projeto propõe o \textit{EvoPolicy-SDD}, uma abordagem de Engenharia de Software orientada por especificações versionadas que torna a sincronização entre especificação, regra e documento uma pré-condição verificável de publicação. As contribuições pretendidas são: (i) um metamodelo para coevolução verificável desses artefatos; (ii) um validador com categorias de verificação e níveis de ablação, que permite atribuir a detecção a cada mecanismo; (iii) um conjunto aberto de operadores de mutação e cenários de evolução de políticas; e (iv) evidência empírica sobre ganhos, custos e limites da verificação estrutural e sobre o benefício incremental da verificação semântica. Um protótipo determinístico já implementa (i)--(iii) em pequena escala e fornece os resultados preliminares apresentados na Seção~\ref{sec5:preliminares}.
+Este projeto propõe o \textit{EvoPolicy-SDD}, uma abordagem orientada por especificações (\textit{Spec-Driven Development}, SDD) em que requisitos, regras e documentos são amarrados numa especificação versionada, e o agente só publica decisões quando esses artefatos estão consistentes entre si. A pesquisa busca responder: \textit{como manter auditáveis as decisões de agentes híbridos quando as políticas de negócio evoluem, e até onde a verificação estrutural e a verificação semântica conseguem detectar a deriva?}
 
-O projeto é independente e usa um domínio fictício de plataforma de pedidos (reembolsos e cancelamentos), sem dados reais. Uma prova de conceito pública de agente com RAG para atendimento\footnote{\url{https://github.com/DouglasKomori/ifood-genai-agent-poc}} serviu apenas como referência arquitetural; nenhum código ou dado dela é reutilizado. A integração com LLMs reais faz parte do estudo proposto (Seção~\ref{sec6:plano}).
+As contribuições pretendidas são: (i) a caracterização da deriva de coevolução em agentes híbridos, com uma taxonomia de tipos de deriva; (ii) um metamodelo e um validador com níveis cumulativos de verificação, que permitem atribuir a detecção a cada mecanismo; (iii) uma verificação semântica entre regra e texto assistida por LLM, voltada às derivas que a verificação estrutural não alcança; e (iv) um estudo empírico, baseado em mutações, sobre ganhos, custos e limites dessas verificações. Um protótipo determinístico já implementa (ii) e uma versão inicial do estudo (iv), cujos resultados estão na Seção~\ref{sec5:preliminares}.
 
-O restante do texto está organizado da seguinte forma: a Seção~\ref{sec2:contexto} apresenta a contextualização; a Seção~\ref{sec3:trab_rel} discute trabalhos relacionados; a Seção~\ref{sec4:abordagem} descreve a abordagem proposta; a Seção~\ref{sec5:preliminares} reporta a avaliação exploratória; a Seção~\ref{sec6:plano} detalha o plano de pesquisa; a Seção~\ref{sec7:ameacas} discute ameaças à validade; e a Seção~\ref{sec8:final} apresenta as considerações finais.
+O texto está organizado da seguinte forma: a Seção~\ref{sec2:problema} descreve o problema; a Seção~\ref{sec3:fundamentacao} apresenta a fundamentação; a Seção~\ref{sec3:trab_rel} discute trabalhos relacionados e a lacuna; a Seção~\ref{sec4:abordagem} descreve a abordagem; a Seção~\ref{sec5:preliminares} reporta a avaliação exploratória; a Seção~\ref{sec6:plano} detalha o plano de pesquisa; a Seção~\ref{sec7:ameacas} discute ameaças à validade; e a Seção~\ref{sec8:final} conclui.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%% Seção 2  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-\section{Contextualização}
-\label{sec2:contexto}
+\section{O Problema: Deriva de Coevolução}
+\label{sec2:problema}
 
-\textbf{Agentes baseados em LLM e RAG.} RAG combina um recuperador e um gerador para que a resposta seja condicionada a documentos externos \cite{lewis2020rag}; revisões recentes organizam as variações dessa arquitetura e seus modos de avaliação \cite{gao2023ragsurvey}. Agentes estendem esse esquema com raciocínio intercalado a ações e uso de ferramentas \cite{yao2023react,wang2024agentsurvey}. Do ponto de vista de engenharia, sistemas RAG apresentam pontos de falha recorrentes, como conteúdo ausente, recuperação de trechos irrelevantes e extração incorreta \cite{barnett2024sevenfailure}; LLMs nem sempre usam bem informações longas no contexto \cite{liu2024lostmiddle} e podem produzir justificativas plausíveis sem sustentação nas fontes \cite{ji2023hallucination}.
+\textbf{Exemplo motivador.} Considere um agente que apoia atendentes de uma plataforma fictícia de pedidos em decisões de reembolso. Na versão 1 da política, o cliente que desiste do pedido depois do despacho não tem direito a reembolso. A regra em código (\code{desistência após despacho} $\rightarrow$ NEGAR) e o documento da política dizem a mesma coisa, e o agente nega o pedido citando o documento correto.
 
-\textbf{Especificações como fonte de verdade.} Projeto por contrato \cite{meyer1992dbc} e engenharia dirigida por modelos \cite{schmidt2006mde} defendem especificações explícitas e verificáveis como fonte do comportamento do software. O desenvolvimento orientado por especificações (\textit{Spec-Driven Development}, SDD) retomou esse princípio para guiar agentes de codificação a partir de especificações versionadas \cite{githubspeckit2025}. Neste projeto, o princípio é aplicado a outro alvo: a especificação passa a governar não apenas o código gerado, mas a consistência entre regra executável e texto consumido por um modelo como evidência.
+Na versão 2, a empresa cria uma exceção: clientes \textit{premium} podem cancelar até 1~hora após o despacho. A equipe de conteúdo atualiza o documento, mas a regra em código não é alterada. A Figura~\ref{fig:problema} mostra o que acontece: para um cliente \textit{premium} que cancela 40 minutos após o despacho, o agente aplica a regra antiga e \textbf{nega} o reembolso, mas cita como justificativa o documento novo, que diz que o reembolso é \textbf{permitido}. Nenhum teste falha, nenhum erro é registrado, e a decisão chega ao atendente com uma justificativa que a contradiz.
 
-\textbf{Rastreabilidade e evolução.} O problema da rastreabilidade de requisitos foi caracterizado por \cite{gotel1994traceability} e sistematizado em modelos de referência \cite{ramesh2001traceability}; a rastreabilidade sempre atualizada permanece um desafio em aberto \cite{clelandhuang2014traceability}. Estudos de evolução mostram que artefatos acoplados tendem a divergir quando evoluem em ritmos diferentes, como código e comentários \cite{tan2007icomment,wen2019codecomment}, código e documentação \cite{aghajani2019docissues} e código de produção e de teste \cite{zaidman2011coevolution}.
+\begin{figure}[!ht]
+\centering
+\resizebox{0.8\linewidth}{!}{
+\begin{tikzpicture}[
+  node distance=0.5cm and 1.0cm,
+  box/.style={rectangle, draw=blue!60, fill=blue!8, rounded corners=5pt, text centered,
+    minimum height=1.1cm, text width=5.2cm, font=\small, line width=0.7pt},
+  old/.style={box, draw=gray!70, fill=gray!10},
+  bad/.style={box, draw=red!60, fill=red!6, text width=5.4cm},
+  chg/.style={box, draw=orange!70, fill=orange!10, text width=5.2cm},
+  arrow/.style={->, >=Stealth, thick, color=gray!60}
+]
+\node[chg] (mud) at (0,0) {\textbf{Mudança de política (v2)}\\ ``\textit{Premium} pode cancelar\\ até 1h após o despacho''};
+\node[box] (doc) at (-3.4,-2.6) {\textbf{Documento v2} (atualizado)\\ ``\textit{Premium}: reembolso\\ \textbf{permitido} até 1h''};
+\node[old] (reg) at (3.4,-2.6) {\textbf{Regra em código v1}\\ (não atualizada)\\ desistência após despacho\\ $\rightarrow$ NEGAR};
+\node[box, text width=4.4cm] (ag) at (0,-5.2) {\textbf{Agente}\\ cliente \textit{premium},\\ 40 min após o despacho};
+\node[bad] (dec) at (0,-7.6) {\textbf{Decisão: NEGADO}\\ Justificativa: ``Documento v2:\\ reembolso \textbf{permitido} até 1h''};
+\node[align=left, font=\small, text width=3.6cm, anchor=west] (obs) at (3.1,-7.5) {Sem erro, sem alerta:\\ a decisão contradiz a\\ própria justificativa.};
 
-\textbf{Teste de mutação e oráculos.} O teste de mutação avalia a capacidade de detecção de um conjunto de verificações injetando defeitos artificiais \cite{demillo1978hints,jia2011mutation,papadakis2019mutation}. A definição do que conta como defeito exige um oráculo, problema clássico em teste de software \cite{barr2015oracle}; relações metamórficas \cite{chen2018metamorphic} são uma via complementar para gerar casos sem oráculo explícito.
+\draw[arrow] (mud) -- node[above left, font=\footnotesize, color=black]{atualizado} (doc);
+\draw[arrow, dashed] (mud) -- node[above right, font=\footnotesize, color=black]{esquecido} (reg);
+\draw[arrow] (doc) -- node[below left, font=\footnotesize, color=black]{justificativa} (ag);
+\draw[arrow] (reg) -- node[below right, font=\footnotesize, color=black]{decisão} (ag);
+\draw[arrow] (ag) -- (dec);
+\end{tikzpicture}}
+\caption{Exemplo de deriva de coevolução: a política muda, o documento é atualizado e a regra em código não.}
+\label{fig:problema}
+\end{figure}
+
+\textbf{Tipos de deriva.} O exemplo é um de vários casos possíveis. A Tabela~\ref{tab:tipos_deriva} resume os tipos considerados neste projeto, que orientam o estudo de mutações da Seção~\ref{sec5:preliminares}.
+
+\begin{table}[!ht]
+\centering
+\caption{Tipos de deriva de coevolução considerados.}
+\label{tab:tipos_deriva}
+\small
+\begin{tabularx}{\linewidth}{l X X}
+\toprule
+\textbf{Tipo} & \textbf{O que acontece} & \textbf{Efeito na decisão} \\
+\midrule
+Regra sem documento & a regra muda (limiar, precedência, decisão) e o texto não & decisão nova com justificativa antiga \\
+Documento sem regra & o texto muda e a regra não (caso da Figura~\ref{fig:problema}) & decisão antiga com justificativa nova \\
+Atualização parcial & parte dos documentos fica na versão anterior & justificativas de versões misturadas \\
+Requisito órfão & um requisito é criado ou removido sem regra correspondente & comportamento sem respaldo no requisito \\
+Deriva semântica & o sentido muda e as marcas de controle são atualizadas sem revisão real & passa por qualquer checagem estrutural \\
+\bottomrule
+\end{tabularx}
+\end{table}
+
+\textbf{Por que o versionamento convencional não basta.} Numerar versões de documentos e de código, como fazem as equipes em geral, detecta apenas o caso em que as versões declaradas diferem. Nos demais, as versões podem coincidir enquanto o conteúdo diverge. Testes de regressão que verificam apenas a decisão final também não ajudam, porque não olham a justificativa. O problema exige verificar o \textit{vínculo} entre requisito, regra e texto a cada mudança, e não cada artefato isoladamente.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%% Seção 3  %%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Fundamentação}
+\label{sec3:fundamentacao}
+
+\textbf{Agentes baseados em LLM e RAG.} RAG combina um recuperador e um gerador para que a resposta seja condicionada a documentos externos \cite{lewis2020rag,gao2023ragsurvey}. Sistemas RAG apresentam pontos de falha recorrentes de engenharia, como conteúdo ausente e recuperação de trechos inadequados \cite{barnett2024sevenfailure}, e LLMs podem produzir justificativas plausíveis sem sustentação nas fontes \cite{ji2023hallucination,liu2024lostmiddle}.
+
+\textbf{Especificações como fonte de verdade.} Projeto por contrato \cite{meyer1992dbc} e engenharia dirigida por modelos \cite{schmidt2006mde} defendem especificações explícitas e verificáveis como fonte do comportamento do software. O SDD retomou esse princípio para guiar agentes de codificação a partir de especificações versionadas \cite{githubspeckit2025}. Aqui, o princípio é aplicado a outro alvo: a especificação governa a consistência entre regra executável e texto usado como evidência.
+
+\textbf{Rastreabilidade e evolução.} A rastreabilidade de requisitos liga cada requisito aos artefatos que o implementam \cite{gotel1994traceability,ramesh2001traceability}, e mantê-la sempre atualizada continua sendo um desafio em aberto \cite{clelandhuang2014traceability}. Artefatos acoplados tendem a divergir quando evoluem em ritmos diferentes \cite{lehman1980laws,zaidman2011coevolution}.
+
+\textbf{Teste de mutação.} O teste de mutação avalia a capacidade de detecção de um conjunto de verificações injetando defeitos artificiais \cite{demillo1978hints,jia2011mutation,papadakis2019mutation}; a definição do que conta como defeito exige um oráculo \cite{barr2015oracle}. Este projeto adapta a ideia: os operadores de mutação injetam derivas no par especificação--documentos e medem se o validador as detecta.
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%% Seção 4  %%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Trabalhos Relacionados}
 \label{sec3:trab_rel}
 
-\textbf{Guardas e regras de negócio.} \textit{Frameworks} de guardas programáveis, como o NeMo Guardrails \cite{rebedea2023nemo}, restringem o comportamento conversacional de LLMs por meio de trilhos declarativos. Regras de negócio têm tradição própria como artefatos declarativos separados do código de aplicação \cite{ross2003businessrules}, e motores de política como o Open Policy Agent \cite{opa} tornam políticas executáveis e versionáveis. Essas soluções controlam \textit{o que} o sistema decide, mas não verificam se o texto apresentado como justificativa corresponde à versão da regra aplicada.
+\textbf{Políticas transformadas em guardas para agentes.} \cite{zwerdling2025policy} compilam documentos de política em código de guarda que verifica cada chamada de ferramenta de um agente antes da execução, com testes derivados de trechos do texto da política. \cite{datla2025executable} usam LLMs para traduzir políticas em regras executáveis numa linguagem específica de domínio e comparam o resultado com regras escritas por especialistas. Ambos verificam a correspondência entre texto e regra no momento da construção, para uma única versão da política. \textit{Frameworks} como o NeMo Guardrails \cite{rebedea2023nemo} e motores de política como o Open Policy Agent \cite{opa} tornam as regras declarativas e versionáveis, mas não as relacionam ao texto apresentado como justificativa.
 
-\textbf{Conformidade de processos.} A literatura de conformidade de processos de negócio discute como verificar que processos respeitam normas e como lidar com mudanças nessas normas \cite{hashmi2018compliance}, e critérios de correção para mudanças dinâmicas em \textit{workflows} foram sistematizados por \cite{rinderle2004correctness}. Esses trabalhos não consideram agentes que recuperam documentos em linguagem natural como evidência.
+\textbf{Políticas e conhecimento que mudam.} O PolicyBank \cite{choi2026policybank} permite que o agente refine a sua \textit{interpretação} de uma política ambígua a partir de \textit{feedback}, mas a política em si não muda. O \textit{benchmark} HoH \cite{ouyang2025hoh} mostra que informação desatualizada na base de recuperação reduz a acurácia de sistemas RAG, mas considera apenas documentos, sem regras executáveis. Na área de processos de negócio, \cite{hashmi2018compliance} e \cite{rinderle2004correctness} tratam conformidade e mudanças de \textit{workflows}, sem agentes que usam texto como evidência.
 
-\textbf{Avaliação de RAG e de agentes.} Métricas automáticas como as do RAGAs \cite{es2024ragas} e o uso de LLMs como avaliadores \cite{zheng2023judge} medem a fidelidade da resposta ao contexto recuperado, mas pressupõem que esse contexto seja a versão correta da política. Revisões sobre teste de sistemas de aprendizado de máquina \cite{zhang2022mltesting,breck2017mltestscore} e sobre LLMs em Engenharia de Software \cite{hou2024llm4se,fan2023llmse} não tratam especificamente da coevolução entre regras executáveis e documentos de evidência.
+\textbf{Inconsistência entre código e documentação.} DocPrism \cite{xu2025docprism} e METAMON \cite{lee2025metamon} usam LLMs para detectar divergências entre código e documentação de software. São a base mais próxima para a verificação semântica proposta aqui, mas tratam funções e APIs, não regras de negócio que evoluem com uma política.
 
-\textbf{Posicionamento.} O EvoPolicy-SDD não propõe um novo motor de regras nem uma nova métrica de fidelidade. Sua contribuição está na interseção desses trabalhos: tornar verificável, antes da publicação, que requisito, regra e documento de evidência continuam consistentes após cada mudança de política, e medir de forma explícita os custos e os limites dessa verificação. A revisão sistemática prevista na Seção~\ref{sec6:plano} \cite{kitchenham2007slr} confirmará ou refinará esse posicionamento.
+\textbf{Lacuna.} A Tabela~\ref{tab:relacionados} compara os trabalhos. Nenhum deles trata, ao mesmo tempo, regras executáveis, texto de política usado como evidência e a evolução de ambos ao longo de versões. Essa combinação é o foco do EvoPolicy-SDD. A revisão sistemática prevista na Seção~\ref{sec6:plano} \cite{kitchenham2007slr} confirmará ou refinará essa lacuna.
+
+\begin{table}[!ht]
+\centering
+\caption{Comparação com trabalhos relacionados (\checkmark: trata; $\sim$: parcialmente; --: não trata).}
+\label{tab:relacionados}
+\small
+\begin{tabular}{l c c c c}
+\toprule
+\textbf{Trabalho} & \textbf{Regras} & \textbf{Texto como} & \textbf{Consistência} & \textbf{Evolução de} \\
+ & \textbf{executáveis} & \textbf{evidência} & \textbf{regra--texto} & \textbf{versões} \\
+\midrule
+\cite{zwerdling2025policy} & \checkmark & $\sim$ & $\sim$ & -- \\
+\cite{datla2025executable} & \checkmark & -- & $\sim$ & -- \\
+\cite{choi2026policybank} & -- & \checkmark & -- & $\sim$ \\
+\cite{ouyang2025hoh} & -- & \checkmark & -- & \checkmark \\
+\cite{xu2025docprism,lee2025metamon} & -- & -- & \checkmark & -- \\
+\textbf{EvoPolicy-SDD} & \checkmark & \checkmark & \checkmark & \checkmark \\
+\bottomrule
+\end{tabular}
+\end{table}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%% Seção 4  %%%%%%%%%%%%%%%%
@@ -343,7 +424,7 @@ Em relação à \textit{validade de construto}, \textit{fingerprints} e \textit{
 \section{Considerações Finais}
 \label{sec8:final}
 
-Este projeto propõe o EvoPolicy-SDD, uma abordagem orientada por especificações para manter verificáveis os vínculos entre requisitos, regras executáveis, documentos de evidência e decisões de agentes de IA ao longo da evolução de políticas de negócio. O protótipo atual mostra, em pequena escala, que as marcas de integridade explicam a maior parte do ganho sobre o versionamento convencional (de 2 para 8 derivas detectadas em 12), que o \textit{digest} de texto amplia a detecção ao custo de bloqueios por mudanças benignas, e que derivas semânticas com marcas recalculadas escapam a qualquer verificação estrutural.
+Este projeto trata de um problema simples de enunciar e difícil de perceber na prática: quando uma política de negócio muda, a regra em código e o documento que a justifica podem deixar de dizer a mesma coisa, sem que o agente de IA apresente qualquer erro. O EvoPolicy-SDD propõe amarrar requisitos, regras e documentos numa especificação versionada e bloquear decisões quando esses artefatos divergem. O protótipo atual mostra, em pequena escala, que as marcas de integridade explicam a maior parte do ganho sobre o versionamento convencional (de 2 para 8 derivas detectadas em 12), que o \textit{digest} de texto amplia a detecção ao custo de bloqueios por mudanças benignas, e que derivas semânticas com marcas recalculadas escapam a qualquer verificação estrutural.
 
 Do ponto de vista científico, o trabalho pretende contribuir na interseção entre Engenharia de Software, rastreabilidade e sistemas baseados em LLMs, com um estudo controlado sobre ganhos, custos e limites da verificação de coevolução. Do ponto de vista prático, pretende oferecer um mecanismo aplicável a equipes que operam agentes sobre políticas que mudam com frequência, sem substituir a revisão humana. Como próximos passos, estão a revisão sistemática, a ampliação do corpus de mudanças e a integração com LLMs reais, incluindo a avaliação da verificação semântica como resposta ao limite identificado.
 

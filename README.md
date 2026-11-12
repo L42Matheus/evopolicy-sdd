@@ -81,7 +81,7 @@ O bloqueio é **fail-closed** e deve ser operacionalizado com fluxo de exceção
 
 ## Origem e ética
 
-Projeto original e código independentes, inspirados conceitualmente por: Douglas Komori, [`ifood-genai-agent-poc`](https://github.com/DouglasKomori/ifood-genai-agent-poc). **Não é fork e não reproduz código nem dados daquele repositório.** O domínio foi adaptado para uma plataforma fictícia, sem qualquer vínculo com iFood. A publicação de resultados precisa declarar o baseline, protocolo, versões, dataset e limitações.
+Projeto e código originais. O domínio é uma plataforma fictícia de pedidos, sem dados reais. A publicação de resultados precisa declarar o baseline, protocolo, versões, dataset e limitações.
 
 ## Documentos
 

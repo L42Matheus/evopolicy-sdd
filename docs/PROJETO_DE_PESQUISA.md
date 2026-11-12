@@ -114,6 +114,5 @@ Um metamodelo, um pipeline de coevolução verificável, um conjunto de mutaçõ
 
 ## 11. Referências iniciais de trabalho
 
-- Projeto de referência: https://github.com/DouglasKomori/ifood-genai-agent-poc (inspiração arquitetural, não reprodução de código ou dados).
 - SDD-ADR (artefato prévio do grupo, objeto de pesquisa diferente).
 - Complementar a revisão com artigos revisados por pares sobre engenharia de sistemas LLM/RAG, *policy-as-code*, governança de agentes, testes metamórficos e evolução de especificações. **Não tratar esta lista preliminar como revisão sistemática concluída.**
