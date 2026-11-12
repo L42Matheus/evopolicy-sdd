@@ -1,0 +1,111 @@
+study: EvoPolicy-SDD
+version: '2'
+effective_date: '2026-11-10'
+scope: Plataforma fictícia de pedidos, sem dados reais
+fields:
+  fraude_suspeita: bool
+  falha_origem: str
+  cancelamento_cliente: bool
+  despachado: bool
+  cliente_premium: bool
+  horas_apos_despacho: number
+requirements:
+- id: REQ-01
+  description: Casos de fraude suspeita exigem avaliação humana antes de qualquer reembolso.
+  acceptance_criterion: Se fraude_suspeita=true, decisão REVISAO_HUMANA independentemente das outras condições.
+- id: REQ-02
+  description: Falhas atribuídas a restaurante ou transportadora podem gerar reembolso.
+  acceptance_criterion: Se falha_origem in [restaurante,transportadora] e não há fraude, decisão PERMITIR.
+- id: REQ-03
+  description: Cancelamentos solicitados pelo cliente após o despacho são normalmente negados.
+  acceptance_criterion: 'Cliente cancelou após despacho, sem exceção aplicável: NEGAR.'
+- id: REQ-04
+  description: Cancelamento solicitado antes do despacho é permitido.
+  acceptance_criterion: 'Cliente cancelou antes do despacho, sem fraude/falha prioritária: PERMITIR.'
+- id: REQ-05
+  description: A partir da versão 2, cancelamento premium logo após despacho é exceção.
+  acceptance_criterion: Cliente premium que cancela com até 1 hora do despacho (inclusive), sem fraude, pode receber
+    PERMITIR.
+rules:
+- id: REG-SEG
+  priority: 10
+  document_id: DOC-SEG
+  requirement_ids:
+  - REQ-01
+  when:
+    all:
+    - field: fraude_suspeita
+      op: eq
+      value: true
+  decision: REVISAO_HUMANA
+  rationale: 'Sinal de fraude: encaminhar para revisão humana.'
+- id: REG-FALHA
+  priority: 20
+  document_id: DOC-FALHA
+  requirement_ids:
+  - REQ-02
+  when:
+    all:
+    - field: falha_origem
+      op: in
+      value:
+      - restaurante
+      - transportadora
+  decision: PERMITIR
+  rationale: 'Falha operacional identificada: reembolso elegível.'
+- id: REG-PREMIUM-EXC
+  priority: 25
+  document_id: DOC-CANCEL
+  requirement_ids:
+  - REQ-05
+  when:
+    all:
+    - field: cancelamento_cliente
+      op: eq
+      value: true
+    - field: despachado
+      op: eq
+      value: true
+    - field: cliente_premium
+      op: eq
+      value: true
+    - field: horas_apos_despacho
+      op: lte
+      value: 1.0
+  decision: PERMITIR
+  rationale: 'Exceção premium: pedido cancelado até 1 hora após despacho.'
+- id: REG-CANCEL-ENVIADO
+  priority: 30
+  document_id: DOC-CANCEL
+  requirement_ids:
+  - REQ-03
+  when:
+    all:
+    - field: cancelamento_cliente
+      op: eq
+      value: true
+    - field: despachado
+      op: eq
+      value: true
+  decision: NEGAR
+  rationale: Cancelamento após despacho sem exceção aplicável.
+- id: REG-CANCEL-PRE
+  priority: 40
+  document_id: DOC-CANCEL
+  requirement_ids:
+  - REQ-04
+  when:
+    all:
+    - field: cancelamento_cliente
+      op: eq
+      value: true
+    - field: despachado
+      op: eq
+      value: false
+  decision: PERMITIR
+  rationale: Cancelamento antes do despacho.
+default_decision: REVISAO_HUMANA
+document_digests:
+  DOC-SEG: ad13f4531ecddcdbb2611cb16e81e94c313341be952860a38a24015b90456cb2
+  DOC-FALHA: 89d930d7dbded7d607404ee583c75d1107f541dfb4345d618d564a93bd00b678
+  DOC-CANCEL: 3794af64483ddcf72a4487f27077af7da2440b1cc72a455abb89b7210d70d9f6

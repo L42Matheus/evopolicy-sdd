@@ -1,0 +1,44 @@
+{
+  "version": "1",
+  "dataset_type": "fictitious",
+  "documents": [
+    {
+      "id": "DOC-SEG",
+      "version": "1",
+      "title": "Antifraude e validação",
+      "content": "Fraude suspeita exige revisão humana. Regra de segurança tem precedência sobre reembolsos.",
+      "requirement_ids": [
+        "REQ-01"
+      ],
+      "rule_fingerprints": {
+        "REG-SEG": "59f891ea5ebf4859ef93454f3ed16ce613240ae2e567aea55a6f37735f9f9c2b"
+      }
+    },
+    {
+      "id": "DOC-FALHA",
+      "version": "1",
+      "title": "Falhas operacionais",
+      "content": "Falha causada pelo restaurante ou transportadora gera elegibilidade de reembolso, exceto fraude suspeita.",
+      "requirement_ids": [
+        "REQ-02"
+      ],
+      "rule_fingerprints": {
+        "REG-FALHA": "d0b5f13f3379aae40d7c2e1824f011ca312c64929a0a0d50048371479a335358"
+      }
+    },
+    {
+      "id": "DOC-CANCEL",
+      "version": "1",
+      "title": "Cancelamento de pedido",
+      "content": "Cancelamento do cliente após despacho é negado. Antes do despacho, é permitido.",
+      "requirement_ids": [
+        "REQ-03",
+        "REQ-04"
+      ],
+      "rule_fingerprints": {
+        "REG-CANCEL-ENVIADO": "1799cbeea5f2e7622fa85d4bac32854c9cb390d1feec5ab66e7caf6e01b46623",
+        "REG-CANCEL-PRE": "f69bd2cb83e93f2202baa7cc6f937a0221911252a93dbd0117efc78d2247f0f9"
+      }
+    }
+  ]
+}

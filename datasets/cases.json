@@ -1,0 +1,261 @@
+{
+  "metadata": {
+    "purpose": "benchmark offline demonstrativo; casos sintéticos construídos manualmente",
+    "oracle": "rótulos pré-definidos nas versões 1 e 2",
+    "not_for_production": true
+  },
+  "cases": [
+    {
+      "id": "C01",
+      "question": "Cliente com indício de fraude solicita reembolso.",
+      "facts": {
+        "fraude_suspeita": true,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "REVISAO_HUMANA",
+      "expected_v2": "REVISAO_HUMANA"
+    },
+    {
+      "id": "C02",
+      "question": "Restaurante não preparou o pedido corretamente.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "restaurante",
+        "cancelamento_cliente": false,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "PERMITIR",
+      "expected_v2": "PERMITIR"
+    },
+    {
+      "id": "C03",
+      "question": "Transportadora extraviou a encomenda.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "transportadora",
+        "cancelamento_cliente": false,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "PERMITIR",
+      "expected_v2": "PERMITIR"
+    },
+    {
+      "id": "C04",
+      "question": "Cliente comum cancelou após o envio.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "NEGAR",
+      "expected_v2": "NEGAR"
+    },
+    {
+      "id": "C05",
+      "question": "Cliente premium desistiu 30 minutos depois do despacho.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": true,
+        "horas_apos_despacho": 0.5
+      },
+      "expected_v1": "NEGAR",
+      "expected_v2": "PERMITIR"
+    },
+    {
+      "id": "C06",
+      "question": "Cliente premium cancelou exatamente 1 hora após envio.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": true,
+        "horas_apos_despacho": 1.0
+      },
+      "expected_v1": "NEGAR",
+      "expected_v2": "PERMITIR"
+    },
+    {
+      "id": "C07",
+      "question": "Cliente premium cancelou 1h12 depois do envio.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": true,
+        "horas_apos_despacho": 1.2
+      },
+      "expected_v1": "NEGAR",
+      "expected_v2": "NEGAR"
+    },
+    {
+      "id": "C08",
+      "question": "Cliente cancelou antes de ser despachado.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": false,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "PERMITIR",
+      "expected_v2": "PERMITIR"
+    },
+    {
+      "id": "C09",
+      "question": "Pedido cancelado sem confirmação sobre despacho.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": null,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "REVISAO_HUMANA",
+      "expected_v2": "REVISAO_HUMANA"
+    },
+    {
+      "id": "C10",
+      "question": "Fraude suspeita e cliente premium solicita exceção.",
+      "facts": {
+        "fraude_suspeita": true,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": true,
+        "horas_apos_despacho": 0.3
+      },
+      "expected_v1": "REVISAO_HUMANA",
+      "expected_v2": "REVISAO_HUMANA"
+    },
+    {
+      "id": "C11",
+      "question": "Dúvida geral sobre tempo de estorno.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": false,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "REVISAO_HUMANA",
+      "expected_v2": "REVISAO_HUMANA"
+    },
+    {
+      "id": "C12",
+      "question": "Restaurante falhou mas usuário pediu cancelamento.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "restaurante",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "PERMITIR",
+      "expected_v2": "PERMITIR"
+    },
+    {
+      "id": "C13",
+      "question": "Cliente premium cancelou mas hora de despacho não foi informada.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": true,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "NEGAR",
+      "expected_v2": "NEGAR"
+    },
+    {
+      "id": "C14",
+      "question": "Cliente premium com fraude e solicitação antes do despacho.",
+      "facts": {
+        "fraude_suspeita": true,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": false,
+        "cliente_premium": true,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "REVISAO_HUMANA",
+      "expected_v2": "REVISAO_HUMANA"
+    },
+    {
+      "id": "C15",
+      "question": "Cancelamento de cliente sem status premium e com pedido enviado.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": 0.3
+      },
+      "expected_v1": "NEGAR",
+      "expected_v2": "NEGAR"
+    },
+    {
+      "id": "C16",
+      "question": "Cliente comum cancelou após despacho há 10 horas.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": 10
+      },
+      "expected_v1": "NEGAR",
+      "expected_v2": "NEGAR"
+    },
+    {
+      "id": "C17",
+      "question": "Transportadora errou, mas há suspeita de fraude.",
+      "facts": {
+        "fraude_suspeita": true,
+        "falha_origem": "transportadora",
+        "cancelamento_cliente": false,
+        "despachado": true,
+        "cliente_premium": false,
+        "horas_apos_despacho": null
+      },
+      "expected_v1": "REVISAO_HUMANA",
+      "expected_v2": "REVISAO_HUMANA"
+    },
+    {
+      "id": "C18",
+      "question": "Cliente premium cancelou após envio sem suspeita de fraude.",
+      "facts": {
+        "fraude_suspeita": false,
+        "falha_origem": "nenhuma",
+        "cancelamento_cliente": true,
+        "despachado": true,
+        "cliente_premium": true,
+        "horas_apos_despacho": 0.0
+      },
+      "expected_v1": "NEGAR",
+      "expected_v2": "PERMITIR"
+    }
+  ]
+}
